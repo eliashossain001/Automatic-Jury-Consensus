@@ -1,0 +1,3 @@
+# PKU-SafeRLHF subset (Bucket A) — reuse the RewardBench CalibrationItem schema.
+output:
+  manifest_path: outputs/pku_saferlhf/pku_manifest.parquet

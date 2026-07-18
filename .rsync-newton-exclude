@@ -1,0 +1,15 @@
+# heavy / regenerable — excluded from the Newton transfer
+.venv/
+.hf_cache/
+.git/
+**/__pycache__/
+**/*.pyc
+# 2.2 GB of old downstream DPO model artifacts (NOT needed for the strengthening run)
+experiments/downstream_dpo_validation/**/models/
+experiments/downstream_dpo_validation/**/*.safetensors
+experiments/downstream_dpo_validation/**/*.bin
+# scratch
+logs/*.out
+
+# secrets — do not sync going forward
+.env

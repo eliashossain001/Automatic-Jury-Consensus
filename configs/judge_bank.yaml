@@ -1,0 +1,65 @@
+# Judge bank for H1 measurement.
+#
+# Proposal §3.3 specifies six base judges (Claude Haiku 4.5, Llama-3.1-8B,
+# Qwen-2.5-7B, Gemma-2-9B, Mistral-7B-v0.3, Phi-3.5-mini) crossed with two
+# prompt styles (pairwise, Likert-then-compare). Claude Haiku is dropped here
+# because the H1 run is local-only on TITAN RTX; the open-weights five remain.
+#
+# Each base judge is run one at a time with 4-bit nf4 quantization so that two
+# 7-9B judges fit comfortably in a single 24 GB TITAN RTX. Votes are cached to
+# disk so reruns are free and version-pinned by hf_revision when available.
+
+bank:
+  - id: llama-3.1-8b
+    family: llama
+    scale: 8B
+    hf_model: meta-llama/Llama-3.1-8B-Instruct
+    hf_revision: null
+    quantization: nf4
+    dtype: bfloat16
+  - id: qwen-2.5-7b
+    family: qwen
+    scale: 7B
+    hf_model: Qwen/Qwen2.5-7B-Instruct
+    hf_revision: null
+    quantization: nf4
+    dtype: bfloat16
+  - id: gemma-2-9b
+    family: gemma
+    scale: 9B
+    hf_model: google/gemma-2-9b-it
+    hf_revision: null
+    quantization: nf4
+    dtype: bfloat16
+  - id: mistral-7b-v0.3
+    family: mistral
+    scale: 7B
+    hf_model: mistralai/Mistral-7B-Instruct-v0.3
+    hf_revision: null
+    quantization: nf4
+    dtype: bfloat16
+  - id: phi-3.5-mini
+    family: phi
+    scale: 3.8B
+    hf_model: microsoft/Phi-3.5-mini-instruct
+    hf_revision: null
+    quantization: nf4
+    dtype: bfloat16
+
+prompt_styles:
+  - pairwise
+  - likert
+
+generation:
+  max_new_tokens: 8
+  temperature: 0.0
+  do_sample: false
+
+runtime:
+  device: cuda
+  batch_size: 4
+  shuffle_position: true       # randomise which candidate appears first (mitigates position bias as a confound)
+  position_seed: 20260601
+
+output:
+  votes_dir: experiments/h1_measurement/votes

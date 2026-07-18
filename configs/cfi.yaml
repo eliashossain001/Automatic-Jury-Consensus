@@ -1,0 +1,92 @@
+# Correlated Failure Injection (Experiment 2) configuration.
+#
+# This config describes how the CFI experiment is built on top of the H1
+# calibration set and judge bank. It is read by scripts/05–08. None of the
+# H1 outputs (votes, R, figures) are modified by the CFI scripts.
+
+# Source artefacts produced by Experiment 1.
+sources:
+  h1_bank_config: configs/judge_bank.yaml
+  h1_calibration_config: configs/calibration.yaml
+  h1_votes_dir: experiments/h1_measurement/votes
+  h1_correlation_npz: experiments/h1_measurement/results/correlation.npz
+
+# Bias mechanisms to evaluate. Five canonical mechanisms map onto the keys in
+# corrfilter.cfi.BIAS_REGISTRY.
+mechanisms:
+  - verbosity
+  - sycophancy
+  - position
+  - polish
+  - refusal
+
+# Biased-judge ratios per mechanism. The ratio is rounded to the nearest count
+# given the 10-judge H1 bank, so 0.25 → 3 judges biased, 0.50 → 5, 0.75 → 8.
+biased_ratios: [0.0, 0.25, 0.5, 0.75, 1.0]
+
+# Per-mechanism + per-variant seed (drives the biased-judge selection and the
+# per-item position swap used by the position-bias rule).
+seed: 20260601
+
+# Trigger detection thresholds. These match the defaults in corrfilter.cfi.triggers.
+triggers:
+  verbosity_ratio: 0.5
+  polish_subsets: [Factuality, Math]
+  polish_categories: [chat, reasoning]
+  refusal_subsets: [Safety]
+  refusal_categories: [safety]
+
+# Voting mode for the experiment.
+#   replay  → deterministic CPU simulation from cached H1 votes (default).
+#   real    → re-run HFJudge on Newton with the biased prompt injected.
+mode: replay
+
+# Real-mode runtime (ignored when mode == 'replay'). Mirrors the H1 bank
+# runtime block but is only consulted when scripts/06 is invoked with --mode real.
+real_runtime:
+  votes_dir: experiments/h2_cfi/votes
+  batch_size: 4
+  max_new_tokens: 8
+  device: cuda
+  shuffle_position: false   # position swap is shared across biased judges in CFI
+  position_seed: 20260601
+
+# CorrFilter R sourcing strategy. The headline result uses ``h1_clean_R``;
+# the other two are reported as ablations.
+corrfilter_R:
+  primary: h1_clean_R         # headline result
+  ablations:                  # also produced for the comparison table
+    - cfi_variant_R           # oracle / adaptive ablation
+    - identity_R              # no-correlation-correction ablation
+
+# Comparison methods to report alongside CorrFilter.
+methods:
+  majority: true
+  supermajority:
+    enabled: true
+    threshold: 0.6667         # supermajority cutoff (≈ 2/3)
+  independent_weighted:
+    enabled: true             # weights judges by inverse error rate from H1
+  corrfilter: true
+  corrfilter_risk_threshold:
+    enabled: true
+    # CorrFilter + risk-aware threshold: drop items whose α_subset is below
+    # a fixed value, regardless of where they fall in the retention ranking.
+    alpha_floor: 1.5
+
+# Bootstrap configuration.
+bootstrap:
+  n_boot: 1000
+  ci: 0.95
+  seed: 20260602
+
+# Output layout. The experiment writes a full set of artefacts under
+# experiments/h2_cfi/ and mirrors the headline CSVs/figures into results/cfi/
+# for the paper.
+output:
+  experiment_dir: experiments/h2_cfi
+  results_dir: results/cfi
+  votes_dir: experiments/h2_cfi/votes
+  figures_dir: experiments/h2_cfi/figures
+  results_csv_dir: experiments/h2_cfi/results
+  manifest_path: experiments/h2_cfi/results/cfi_manifest.parquet

@@ -1,0 +1,27 @@
+# RewardBench v2 calibration set for H1 measurement (proposal §3.3).
+# Stratified 1k items across the four categories with deterministic sampling.
+
+dataset:
+  hf_repo: allenai/reward-bench-2
+  split: test
+  # RewardBench v2 subsets that we map onto the four-category schema.
+  # Map proposal's four-category schema onto RewardBench v2 subsets.
+  # Verified upstream subset names (1865 total): Factuality 475, Focus 495,
+  # Math 183, Precise IF 160, Safety 450, Ties 102.
+  category_map:
+    chat: [Factuality, Focus]
+    reasoning: [Math, "Precise IF"]
+    safety: [Safety]
+    hard: [Ties]
+
+sampling:
+  per_category: 250          # cap; smaller categories yield all available items
+  seed: 20260601             # YYYYMMDD, locked on the day H1 calibration runs
+  # Each item carries lists `chosen` and `rejected`; we lock the binary
+  # preference pair (chosen[0], rejected[0]) for deterministic judge voting.
+  chosen_index: 0
+  rejected_index: 0
+
+output:
+  cache_dir: data/cache/rewardbench_v2
+  manifest_path: experiments/h1_measurement/results/calibration_manifest.parquet

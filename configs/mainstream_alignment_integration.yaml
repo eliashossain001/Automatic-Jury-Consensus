@@ -1,0 +1,58 @@
+# Experiment: mainstream_alignment_integration
+# Tests whether dependence-aware filtering signals (CorrFilter alpha, BiasCluster
+# |S\C|) help downstream alignment when used as PER-EXAMPLE LOSS WEIGHTS during
+# reward-model training, not only as hard post-hoc filters.
+
+seed: 20260618
+
+data:
+  manifest: outputs/synthetic_poisoned_ultrafeedback/poisoned_manifest.csv
+  votes_dir: outputs/synthetic_poisoned_ultrafeedback/judge_votes
+  bank: configs/judge_bank.yaml
+  correlation_npz: experiments/h1_measurement/results/correlation.npz
+  eval_fraction: 0.20
+
+# Regimes share the UltraFeedback text; they differ only in which items are poisoned.
+#   clean     : no poison (weak-dependence baseline)
+#   synthetic : heuristic content poisoning (manifest poisoned_<rate> columns)
+#   position  : position-aligned vulnerable-subgroup poisoning (top-k by position mass)
+regimes:
+  - {name: clean,  source: none,      rate: 0.0}
+  - {name: syn05,  source: synthetic, rate: 0.05}
+  - {name: syn10,  source: synthetic, rate: 0.10}
+  - {name: syn20,  source: synthetic, rate: 0.20}
+  - {name: pos05,  source: position,  rate: 0.05}
+  - {name: pos10,  source: position,  rate: 0.10}
+  - {name: pos20,  source: position,  rate: 0.20}
+
+# Core conditions are loss-WEIGHTING (same dataset, different per-example weights).
+core_conditions:   [naive, corrfilter_weighted, biascluster_weighted, oracle_soft, oracle_drop]
+# Secondary conditions are hard filtering at matched retention (subset training).
+secondary_conditions: [corrfilter_hard, biascluster_hard, supermajority]
+
+weights:
+  clip_low: 0.25
+  clip_high: 2.0
+  oracle_soft_incorrect: 0.25     # correct=1.0
+  # oracle_drop_incorrect = 0.0
+
+rm_train:
+  base_model: Qwen/Qwen2.5-0.5B-Instruct
+  use_lora: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  learning_rate: 1.0e-5
+  epochs: 2
+  batch_pairs: 4
+  max_length: 640
+  grad_checkpointing: true
+  fp16: false           # reward head is unstable in fp16; fp32 (0.5B fits w/ grad ckpt)
+  grad_clip: 1.0
+
+eval:
+  rewardbench_arrow_glob: data/cache/rewardbench_v2/**/*.arrow
+  rewardbench_n: 300
+  rewardbench_seed: 7
+
+out_dir: results/mainstream_alignment_integration

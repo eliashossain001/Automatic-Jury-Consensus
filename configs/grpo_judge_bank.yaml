@@ -1,0 +1,60 @@
+# GRPO judge bank — REAL GRPO-trained judges (Dr. Lim request), not simulation.
+#
+# Three base models from the paper's bank, each GRPO-trained (scripts/28) into a
+# LoRA adapter on the pairwise preference-label reward, then crossed with the two
+# paper prompt styles at INFERENCE → 6 logical GRPO judges. This mirrors the base
+# bank's structure (model-family × prompt-style) so base-vs-GRPO dependence is a
+# clean, matched contrast.
+#
+# Base weights are the shared cache under /shared/models/huggingface; only the
+# per-judge LoRA adapter is checkpointed (disk-frugal). Trained one model per GPU.
+#
+# Adapters are produced by:
+#   CUDA_VISIBLE_DEVICES=<g> python scripts/28_train_grpo_judge.py \
+#       --model <hf_model> --base-id <id> --family <fam> --scale <scale> \
+#       --seed 0 --max-steps 300 --output <adapter_path>
+
+bank:
+  - id: qwen-2.5-7b-grpo
+    family: qwen
+    scale: 7B
+    hf_model: Qwen/Qwen2.5-7B-Instruct
+    hf_revision: null
+    adapter_path: results/grpo_judges/adapters/qwen-2.5-7b_seed0
+    quantization: nf4
+    dtype: bfloat16
+  - id: mistral-7b-grpo
+    family: mistral
+    scale: 7B
+    hf_model: mistralai/Mistral-7B-Instruct-v0.3
+    hf_revision: null
+    adapter_path: results/grpo_judges/adapters/mistral-7b-v0.3_seed0
+    quantization: nf4
+    dtype: bfloat16
+  - id: phi-3.5-mini-grpo
+    family: phi
+    scale: 3.8B
+    hf_model: microsoft/Phi-3.5-mini-instruct
+    hf_revision: null
+    adapter_path: results/grpo_judges/adapters/phi-3.5-mini_seed0
+    quantization: nf4
+    dtype: bfloat16
+
+prompt_styles:
+  - pairwise
+  - likert
+
+generation:
+  max_new_tokens: 8
+  temperature: 0.0
+  do_sample: false
+
+runtime:
+  device: cuda
+  batch_size: 16
+  shuffle_position: true
+  position_seed: 20260601
+  max_length: 1024
+
+output:
+  votes_dir: results/grpo_judges/rewardbench_votes

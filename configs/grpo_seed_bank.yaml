@@ -1,0 +1,14 @@
+# Seed-contrast bank: qwen seed1 (seed0 already voted in the main bank).
+bank:
+  - id: qwen-2.5-7b-grpo-s1
+    family: qwen
+    scale: 7B
+    hf_model: Qwen/Qwen2.5-7B-Instruct
+    hf_revision: null
+    adapter_path: results/grpo_judges/adapters/qwen-2.5-7b_seed1
+    quantization: nf4
+    dtype: bfloat16
+prompt_styles: [pairwise, likert]
+generation: {max_new_tokens: 8, temperature: 0.0, do_sample: false}
+runtime: {device: cuda, batch_size: 16, shuffle_position: true, position_seed: 20260601, max_length: 1024}
+output: {votes_dir: results/grpo_judges/rewardbench_votes}

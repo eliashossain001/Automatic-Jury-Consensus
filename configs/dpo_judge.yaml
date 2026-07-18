@@ -1,0 +1,10 @@
+# DPO judge bank (Bucket 2) — same 3 models as GRPO, DPO-trained into LoRA adapters,
+# crossed with 2 prompt styles = 6 logical DPO judges. Adapters from scripts/train_judges_dpo.py.
+bank:
+  - {id: qwen-2.5-7b-dpo,   family: qwen,    scale: 7B,   hf_model: Qwen/Qwen2.5-7B-Instruct,        adapter_path: results/strengthening_phase/dpo_judges/adapters/qwen-2.5-7b_seed0,      quantization: nf4, dtype: bfloat16}
+  - {id: mistral-7b-dpo,    family: mistral, scale: 7B,   hf_model: mistralai/Mistral-7B-Instruct-v0.3, adapter_path: results/strengthening_phase/dpo_judges/adapters/mistral-7b-v0.3_seed0, quantization: nf4, dtype: bfloat16}
+  - {id: phi-3.5-mini-dpo,  family: phi,     scale: 3.8B, hf_model: microsoft/Phi-3.5-mini-instruct,   adapter_path: results/strengthening_phase/dpo_judges/adapters/phi-3.5-mini_seed0,   quantization: nf4, dtype: bfloat16}
+prompt_styles: [pairwise, likert]
+generation: {max_new_tokens: 8, temperature: 0.0, do_sample: false}
+runtime: {device: cuda, batch_size: 16, shuffle_position: true, position_seed: 20260601, max_length: 1024}
+output: {votes_dir: results/strengthening_phase/dpo_judges/rewardbench_votes}

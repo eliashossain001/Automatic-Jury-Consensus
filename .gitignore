@@ -1,0 +1,42 @@
+# ---- Python build / cache artifacts ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+build/
+dist/
+
+# ---- Secrets / environment ----
+.env
+.env.*
+.hf_cache/
+
+# ---- Heavy data & experiment artifacts (kept locally, not pushed) ----
+data/
+experiments/
+results/
+outputs/
+reports/
+figures/
+
+# ---- Logs / scratch ----
+logs/
+*.log
+*.out
+
+# ---- Paper source & writeups (kept locally, not pushed) ----
+*.tex
+*.tex.*-snapshot
+*.pdf
+iclr2025_conference.bib
+PAPER_CHANGES.md
+paper_claim_tightening.diff
+paper_claim_tightening_list.md
+reviewer_response_analysis.md
+
+# ---- OS cruft ----
+.DS_Store
+Thumbs.db

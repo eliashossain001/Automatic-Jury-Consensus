@@ -1,0 +1,19 @@
+# Extended judge bank (Bucket 4) — base 5 models + added families/sizes for n_eff saturation.
+# Added models are all cached in /shared/models. 4-bit so 12-14B fit on one H100/A100.
+# 10 base + up to 8 added = up to ~18-20 logical judges (x2 prompt styles).
+bank:
+  - {id: llama-3.1-8b,   family: llama,   scale: 8B,   hf_model: meta-llama/Llama-3.1-8B-Instruct,   quantization: nf4, dtype: bfloat16}
+  - {id: qwen-2.5-7b,    family: qwen,    scale: 7B,   hf_model: Qwen/Qwen2.5-7B-Instruct,           quantization: nf4, dtype: bfloat16}
+  - {id: gemma-2-9b,     family: gemma,   scale: 9B,   hf_model: google/gemma-2-9b-it,               quantization: nf4, dtype: bfloat16}
+  - {id: mistral-7b-v0.3,family: mistral, scale: 7B,   hf_model: mistralai/Mistral-7B-Instruct-v0.3, quantization: nf4, dtype: bfloat16}
+  - {id: phi-3.5-mini,   family: phi,     scale: 3.8B, hf_model: microsoft/Phi-3.5-mini-instruct,    quantization: nf4, dtype: bfloat16, trust_remote_code: false}
+  # --- added for the extended bank ---
+  - {id: qwen-2.5-14b,   family: qwen,    scale: 14B,  hf_model: Qwen/Qwen2.5-14B-Instruct,          quantization: nf4, dtype: bfloat16}
+  - {id: qwen-2.5-1.5b,  family: qwen,    scale: 1.5B, hf_model: Qwen/Qwen2.5-1.5B-Instruct,         quantization: nf4, dtype: bfloat16}
+  - {id: gemma-3-12b,    family: gemma,   scale: 12B,  hf_model: google/gemma-3-12b-it,              quantization: nf4, dtype: bfloat16}
+  - {id: mistral-nemo,   family: mistral, scale: 12B,  hf_model: mistralai/Mistral-Nemo-Instruct-2407, quantization: nf4, dtype: bfloat16}
+  - {id: llama-3.2-3b,   family: llama,   scale: 3B,   hf_model: meta-llama/Llama-3.2-3B-Instruct,   quantization: nf4, dtype: bfloat16}
+prompt_styles: [pairwise, likert]
+generation: {max_new_tokens: 8, temperature: 0.0, do_sample: false}
+runtime: {device: cuda, batch_size: 16, shuffle_position: true, position_seed: 20260601, max_length: 1024}
+output: {votes_dir: results/strengthening_phase/extended_bank/votes}
