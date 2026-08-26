@@ -8,9 +8,9 @@ file so downstream scripts can read it without re-running heuristics.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 import pandas as pd
 
@@ -24,7 +24,6 @@ from corrfilter.cfi.triggers import (
     detect_verbosity_trigger,
 )
 from corrfilter.data import CalibrationItem
-
 
 TRIGGER_FUNCS = {
     BiasMechanism.VERBOSITY: detect_verbosity_trigger,

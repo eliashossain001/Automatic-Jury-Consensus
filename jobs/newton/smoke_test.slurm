@@ -28,7 +28,7 @@ nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 $PY -c "import torch; assert torch.cuda.is_available(); print('cuda', torch.cuda.get_device_name(0))"
 
 echo "### [3/3] tiny DPO-judge train (32 pairs, verifies trl/peft/bnb) ###"
-$PY scripts/train_judges_dpo.py --model Qwen/Qwen2.5-1.5B-Instruct --base-id qwen-1.5b-smoke \
+$PY scripts/training/train_dpo_judge.py --model Qwen/Qwen2.5-1.5B-Instruct --base-id qwen-1.5b-smoke \
   --family qwen --scale 1.5B --seed 0 --limit 32 --epochs 1 --batch 2 --grad-accum 1 \
   --output "$RESULTS/.smoke/dpo_judge" $(prec_flag)
 test -f "$RESULTS/.smoke/dpo_judge/adapter_model.safetensors" && echo "SMOKE_TEST_PASSED" || { echo "SMOKE_TEST_FAILED"; exit 1; }

@@ -21,14 +21,14 @@ required for ``dry_run`` accounting.
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
-from dataclasses import dataclass, field
-from typing import Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
 
 from corrfilter.data import CalibrationItem
 from corrfilter.judges.base import Judge, JudgeSpec, JudgeVote
+from corrfilter.judges.position import position_swap
 from corrfilter.judges.prompts import get_prompt_template
 
 logger = logging.getLogger(__name__)
@@ -41,6 +41,17 @@ PRICES = {
     "gemini-2.0-flash": (0.10, 0.40),
     "claude-3-5-haiku-latest": (0.80, 4.00),
     "claude-haiku-4-5": (1.00, 5.00),
+    # The paper's six pinned frontier judges. Gemini rates come from the
+    # project's own billed run logs (outputs/gemini_bank/run_log_*.json);
+    # OpenRouter rates from the live /api/v1/models pricing endpoint
+    # (2026-08-07), validated against the Stage-P pilot's exact balance
+    # delta ($2.224 reconstructed vs $2.217 billed).
+    "gemini-3.1-pro-preview": (2.0, 12.0),
+    "gemini-3.6-flash": (0.3, 2.5),
+    "gemini-3.5-flash-lite": (0.1, 0.4),
+    "openai/gpt-5.6-sol": (5.0, 30.0),
+    "anthropic/claude-opus-5": (5.0, 25.0),
+    "x-ai/grok-4.5": (2.0, 6.0),
 }
 
 
@@ -92,6 +103,15 @@ class APIJudge(Judge):
         pin, pout = PRICES.get(model, (None, None))
         self.price_in = price_in if price_in is not None else (pin or 0.0)
         self.price_out = price_out if price_out is not None else (pout or 0.0)
+        # A live judge with no known price would silently report $0 and defeat
+        # any budget ceiling (observed in the Stage-P pilot). Track and warn.
+        self.cost_known = bool((price_in is not None and price_out is not None)
+                               or model in PRICES)
+        if not dry_run and not self.cost_known:
+            logger.warning(
+                "APIJudge model %r has no PRICES entry and no explicit price: "
+                "reported cost will be $0 and budget ceilings will NOT be "
+                "enforced for this judge", model)
         self.request_pause_s = request_pause_s
         self._client = None
         self.usage = Usage()
@@ -122,10 +142,16 @@ class APIJudge(Judge):
 
     # ---- helpers ----
     def _position_swap(self, item_id: str) -> bool:
+        """Deterministic slot assignment (see corrfilter.judges.position).
+
+        Previously used Python's built-in hash(), which is salted per process, so slot
+        assignment was not reproducible across runs and cross-bank comparisons silently
+        saw different layouts. BLAKE2b is stable across processes, machines, and
+        PYTHONHASHSEED values.
+        """
         if not self.shuffle_position:
             return False
-        h = hashlib.md5(f"{self.position_seed}:{self.spec.logical_id}:{item_id}".encode()).hexdigest()
-        return int(h, 16) & 1 == 1
+        return position_swap(item_id, self.spec.logical_id, self.position_seed)
 
     @staticmethod
     def _split_system_user(text: str) -> tuple[str, str]:

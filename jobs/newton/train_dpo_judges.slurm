@@ -25,7 +25,7 @@ DONE="$RESULTS/.done/train_dpo_${BASE_ID}"; mkdir -p "$(dirname "$DONE")"
 if [ -f "$OUT/adapter_model.safetensors" ]; then echo "[resume] $BASE_ID adapter exists; skip"; touch "$DONE"; exit 0; fi
 
 echo "### training DPO judge: $MODEL ###"
-$PY scripts/train_judges_dpo.py --model "$MODEL" --base-id "$BASE_ID" --family "$FAMILY" \
+$PY scripts/training/train_dpo_judge.py --model "$MODEL" --base-id "$BASE_ID" --family "$FAMILY" \
   --scale "$SCALE" --seed "$SEED" --output "$OUT" --epochs 1 --beta 0.1 --lr 5e-6 \
   $(prec_flag) $EXTRA
 touch "$DONE"

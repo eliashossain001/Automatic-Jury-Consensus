@@ -14,7 +14,6 @@ from dataclasses import dataclass
 
 from corrfilter.data import CalibrationItem
 
-
 # Patterns are intentionally simple, word-boundary anchored, case insensitive.
 _SYCOPHANCY_PATTERNS = [
     r"\bI think\b",

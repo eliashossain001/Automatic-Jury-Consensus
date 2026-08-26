@@ -1,6 +1,6 @@
 # GRPO judge bank — REAL GRPO-trained judges (Dr. Lim request), not simulation.
 #
-# Three base models from the paper's bank, each GRPO-trained (scripts/28) into a
+# Three base models from the paper's bank, each GRPO-trained (scripts/training/train_grpo_judge.py) into a
 # LoRA adapter on the pairwise preference-label reward, then crossed with the two
 # paper prompt styles at INFERENCE → 6 logical GRPO judges. This mirrors the base
 # bank's structure (model-family × prompt-style) so base-vs-GRPO dependence is a
@@ -10,7 +10,7 @@
 # per-judge LoRA adapter is checkpointed (disk-frugal). Trained one model per GPU.
 #
 # Adapters are produced by:
-#   CUDA_VISIBLE_DEVICES=<g> python scripts/28_train_grpo_judge.py \
+#   CUDA_VISIBLE_DEVICES=<g> python scripts/training/train_grpo_judge.py \
 #       --model <hf_model> --base-id <id> --family <fam> --scale <scale> \
 #       --seed 0 --max-steps 300 --output <adapter_path>
 

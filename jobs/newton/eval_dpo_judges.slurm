@@ -14,11 +14,11 @@ source jobs/newton/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 echo "### [1/2] DPO judge inference (6 logical judges) ###"
-$PY scripts/02_run_judges.py --bank configs/dpo_judge.yaml --calibration configs/calibration.yaml --sort-by-length
+$PY scripts/calibration/run_judge_bank.py --bank configs/dpo_judge.yaml --calibration configs/calibration.yaml --sort-by-length
 
 echo "### [2/2] dependence + CorrFilter gain: DPO vs matched base ###"
 mkdir -p outputs/dpo_judges
-$PY scripts/eval_judge_bank.py --trained-bank configs/dpo_judge.yaml --base-bank configs/judge_bank.yaml \
+$PY scripts/training/eval_judge_bank.py --trained-bank configs/dpo_judge.yaml --base-bank configs/judge_bank.yaml \
   --label dpo --manifest "$CAL_MANIFEST" --out outputs/dpo_judges/table_dpo_vs_base.csv \
   --trained-id qwen-2.5-7b-dpo::pairwise --trained-id qwen-2.5-7b-dpo::likert \
   --trained-id mistral-7b-dpo::pairwise --trained-id mistral-7b-dpo::likert \

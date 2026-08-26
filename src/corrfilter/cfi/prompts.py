@@ -30,7 +30,7 @@ class BiasedPrompt(PromptTemplate):
     @classmethod
     def from_instruction(
         cls, base: PromptTemplate, name: str, instruction: str
-    ) -> "BiasedPrompt":
+    ) -> BiasedPrompt:
         """Build a biased prompt from a raw instruction string.
 
         Used by the config-driven 8-mechanism CFI bank

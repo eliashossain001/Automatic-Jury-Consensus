@@ -1,183 +1,202 @@
 # CorrFilter
 
-**Consensus Is Not Reliability: A Taxonomy of Dependence Failures in LLM Judge Banks**
+**Agreement Is Not Evidence: Measuring Error Dependence and Effective Evidence in LLM Judge Consensus**
 
-Code for measuring and mitigating *structured co-failure* in LLM judge banks used for
-alignment-data filtering.
+Consensus filtering treats judge agreement as accumulated evidence. That is only valid if
+judges fail *independently*. This repository measures that assumption directly, and it
+fails — worse as judges get better.
 
-LLM judges increasingly govern alignment pipelines through **k-of-n consensus** — a
-preference pair is retained when enough judges agree. This assumes judges fail
-*independently*. They don't. This repo provides the tooling to (1) **measure** that
-dependence, (2) **classify** which of three dependence regimes a judge bank is in, and
-(3) **mitigate** it with regime-appropriate filters.
+The code here does three things: it **measures** how much independent evidence a judge
+bank actually carries, it **classifies** which dependence regime the bank is in, and it
+**filters** with a rule matched to that regime.
 
-## Key findings
+## What the experiments show
 
-- **Strong, structural dependence.** A ten-judge bank (5 open-weight models × 2 prompt
-  styles) shows mean pairwise error correlation **ρ̄ = 0.21**, collapsing 10 nominal judges
-  to an effective ensemble of only **n_eff ≈ 3.5** — a hard ceiling of `1/ρ̄ ≈ 4.9`. Roughly
-  **27%** of items have the majority jointly wrong.
-- **Replicates across three preference datasets** (same bank, same estimators), worst on
-  safety data:
+**Consensus carries far less evidence than it counts.** A ten-judge bank (5 open-weight
+models × 2 prompt styles) has mean pairwise error correlation ρ̄ = 0.206, so ten judges
+supply the evidence of n_eff ≈ 3.5 independent ones — even a unanimous verdict is worth
+about 3.5 votes, against a hard ceiling of 1/ρ̄ ≈ 4.86. The pooled-vote panel test that
+practitioners actually run declares winners a dependence-aware test does not support in up
+to 28% of 100-item evaluations.
 
-  | Dataset | ρ̄ | n_eff (of 10) | conditional co-failure |
-  |---|---|---|---|
-  | RewardBench v2 | 0.21 | 3.5 | 0.50 |
-  | UltraFeedback | 0.22 | 3.4 | 0.51 |
-  | **PKU-SafeRLHF** (human safety labels) | **0.27** | **2.9** | **0.53** |
+**No diversification axis restores independence.** Prompt style gives zero decorrelation,
+model family is inconsistent in sign, and provider mixing does not help either. Growing the
+bank from 4 to 16 judges (5 families, 1.5B–14B) reaches only n_eff ≈ 4.7 — more coverage,
+not more independence. The result replicates across three preference datasets:
 
-- **Diversity doesn't fix it.** Prompt-style diversity gives zero decorrelation, model-family
-  diversity is inconsistent, and all judges show position bias (H1 rejected).
-- **Scaling the bank doesn't recover independence.** Growing 4→16 judges (5 families,
-  1.5B–14B), n_eff reaches only **4.7 at n=16 (~29% of nominal, down from 71% at n=4)** —
-  more coverage, not more independence.
-- **Preference optimization amplifies it.** Training the same judges **raises** ρ̄ and shrinks
-  n_eff on a matched 6-judge bank — DPO more than GRPO — yet the correlation-aware
-  **CorrFilter** still cuts false-retention below majority/supermajority consensus at matched
-  60% retention:
+| Dataset | ρ̄ | n_eff (of 10) | conditional co-failure | majority co-failure |
+|---|---|---|---|---|
+| RewardBench v2 | 0.206 | 3.51 | 0.50 | 0.27 |
+| UltraFeedback | 0.219 | 3.36 | 0.51 | 0.26 |
+| PKU-SafeRLHF (human safety labels) | 0.27 | 2.9 | 0.53 | — |
 
-  | Training | ρ̄ | n_eff | CorrFilter FRR reduction @0.60 |
-  |---|---|---|---|
-  | Base (untrained) | 0.178 | 3.17 | — |
-  | GRPO-trained | 0.235 | 2.76 | 4.2 pts [2.8, 5.6] |
-  | DPO-trained | 0.326 | 2.28 | 6.0 pts [4.4, 7.7] |
+**Dependence rises with capability.** Preference-optimizing the same judges raises ρ̄ from
+0.178 to 0.235 (GRPO) and 0.326 (DPO). Three flagship judges from three providers reach
+91–93% individual accuracy while their residual errors correlate at ρ̄ = 0.56 and co-fail
+at 7.7× the independent rate — cross-provider pairs as dependent as within-provider ones,
+so the operative axis is capability tier, not provider.
 
-- **Three dependence regimes**, each needing a different mitigation:
-  - **Mild dependence** — consensus stays approximately reliable.
-  - **Global co-failure** — shared blind spots → confident agreement on wrong labels; a
-    *correlation-aware filter* cuts false retention.
-  - **Vulnerable subgroup** — a biased subset drives wrong majorities while making the
-    ensemble look *less* correlated; a *bias-cluster filter* improves precision.
-  Vulnerable subgroups occur **naturally**, not only under synthetic poisoning: **150/319**
-  consensus-wrong items carry a natural subgroup signature, and leave-cluster-out flips the
-  majority to correct on 47% of wrong items.
-- **Robust to gold-label noise.** Flipping 1/3/5/10% of gold labels (40 seeds) barely moves
-  ρ̄ (0.21 → 0.23); the high-consensus subset is *more* dependent (ρ̄ = 0.34), not a
-  label-noise artifact.
-- **Cheap to deploy.** R is estimated once per bank (scoring is `O(|S|²)`, no per-item
-  training, no matrix inversion); a **low-rank (rank-2/3) approximation of R recovers — even
-  denoises — the full-R benefit**.
+| Bank | ρ̄ | n_eff | CorrFilter FRR reduction @ 0.60 |
+|---|---|---|---|
+| Base (untrained, matched 6) | 0.178 | 3.17 | — |
+| GRPO-trained | 0.235 | 2.76 | 4.2 pts, 95% CI [2.8, 5.6] |
+| DPO-trained | 0.326 | 2.28 | 6.0 pts, 95% CI [4.4, 7.7] |
 
-### Reported honestly (where mitigations do *not* yet win)
+**Dependence is regimes, not a severity scale.** A shared blind spot *raises* measured
+correlation; a biased subgroup that drives wrong majorities *lowers* it. The bank looks
+most independent exactly when it is least trustworthy, and the two need opposite
+mitigations — a correlation-aware score for global co-failure, a bias-cluster filter
+(+4.8 precision points) for a vulnerable subgroup. No fixed aggregation rule is optimal
+across regimes; that is proved in the appendix and confirmed empirically.
 
-- **Regime router:** a supervised dev-set router matches ~78% regime accuracy but does not
-  beat the best single filter (gain −0.6 pts, 95% CI [−1.5, +0.1] includes 0). It's a
-  diagnostic, not a universal policy.
-- **Downstream DPO:** CorrFilter cut training contamination 24.9% → 20.5%, but a 1.5B DPO
-  policy's reward accuracy was unchanged within uncertainty — **no downstream win claimed**;
-  contamination-scaling is future work.
-- **No universal filter:** different regimes need different filters; regime identification is
-  the prerequisite.
+**Downstream, contamination matters monotonically.** Consensus-retained contamination
+degrades a DPO policy's reward margins monotonically from 20% upward.
 
-## Repository layout
+### Where the mitigations do not win
+
+Reported as such, deliberately:
+
+- **Routing between filters** does not universally beat the best in-domain fixed filter.
+  It is a diagnostic, not a policy.
+- **Cross-task routing is unestablished.** A preregistered eleven-configuration screen
+  found no successful cross-task router; what it did establish is a two-sided boundary
+  outside which no aggregation rule has room to help.
+- **No universal filter exists.** Regime identification is the prerequisite, and it is
+  itself imperfect.
+
+## Layout
 
 ```
 corrfilter/
-├── src/corrfilter/            Python package
-│   ├── data/                  RewardBench v2 / UltraFeedback calibration loaders
-│   ├── judges/                Judge abstraction: HF local-weights + API judges, prompts, registry
-│   ├── voting/                Calibration + filtering runners with on-disk vote cache
-│   ├── correlation/           Error-correlation R, n_eff, eigenspectrum, clustering
-│   ├── analysis/              Hypothesis tests, agreement, eigen/failure-mode decomposition
-│   ├── cfi/                   Correlated-Failure Index: banks, bias clusters, adaptive-r,
-│   │                          consensus, corrfilter score, triggers, bootstrap, metrics
-│   ├── viz/                   Heatmaps, dendrograms, eigenspectrum, n_eff-collapse figures
-│   └── filtering.py           Core filtering entry points
-├── configs/                   YAML judge-bank and calibration-set definitions
-├── scripts/                   Numbered driver scripts (01_… → 32_…) + analysis/ helpers
-├── jobs/newton/               SLURM job scripts for the strengthening-phase cluster run
-├── tests/                     Unit tests (pytest)
-├── pyproject.toml             Package + dev tooling (ruff, pytest)
-├── README.md
-└── README_NEWTON.md           Cluster (SLURM) runbook for the full strengthening phase
+├── src/corrfilter/          the library — everything importable
+│   ├── data/                RewardBench v2 / UltraFeedback / generic-task loaders
+│   ├── judges/              judge abstraction: HF local weights, API judges (Gemini,
+│   │                        OpenRouter), prompts, forced-choice, position handling
+│   ├── voting/              calibration + filtering runners over an on-disk vote cache
+│   ├── correlation/         error-correlation R, n_eff, eigenspectrum, clustering
+│   ├── analysis/            dependence estimators, bootstrap CIs, filter comparison,
+│   │                        H1 contrasts, agreement, eigen/failure-mode decomposition
+│   ├── cfi/                 correlated-failure injection: bias banks, adaptive-R,
+│   │                        consensus, CorrFilter score, triggers, metrics
+│   ├── screening/           synthetic regime generators, deployment features, and the
+│   │                        routing-feasibility gate
+│   ├── viz/                 heatmaps, dendrograms, eigenspectra, n_eff-collapse figures
+│   ├── routing.py           regime diagnostics, filter family, learned-router toolkit
+│   ├── filtering.py         core filtering entry points
+│   └── evaluation.py        consensus scoring, matched retention, evaluable pools
+├── scripts/                 drivers, grouped by experimental stage
+│   ├── calibration/         build the calibration set, run the judge bank
+│   ├── dependence/          R, n_eff, eigen decomposition, replications, non-error
+│   ├── cfi/                 bias banks, CorrFilter, adaptive-R, low-rank approximation
+│   ├── attacks/             synthetic-poisoned UltraFeedback, position-aligned poisoning
+│   ├── filters/             bias-cluster, learned-cluster, natural-subgroup filters
+│   ├── routing/             regime routers and the crossed/mixed/extended benchmarks
+│   ├── frontier/            Gemini, OpenRouter, multi-provider frontier banks
+│   ├── crosstask/           the routing-feasibility screening campaign
+│   ├── training/            GRPO/DPO-trained judges, forced-choice abstention control
+│   ├── downstream/          downstream DPO policy validation and contamination scaling
+│   ├── robustness/          bank composition, confidence intervals, gold sensitivity
+│   └── figures/             every paper figure and table
+├── configs/                 judge-bank and calibration-set definitions (YAML)
+├── jobs/newton/             SLURM scripts for the cluster runs
+├── docs/                    cluster runbook, experiment log, script map, phase-2 plan
+├── tests/                   213 unit tests (pytest)
+└── pyproject.toml           package + dev tooling (ruff, pytest)
 ```
 
-> **Note on data:** experiment outputs, model artifacts, vote caches, figures, and the
-> paper source are intentionally **not** tracked in git (see `.gitignore`) — they are large
-> and regenerable. Everything below reproduces them from scratch.
+Result artefacts live under `experiments/` (cached votes, manifests, checkpoints),
+`outputs/` (one directory per experiment: CSVs, a `summary.md`, figures), and `results/`.
+All three are gitignored — they are large and regenerable, and every number in the paper
+traces to a file in one of them.
 
-## Installation
+> Coming from an older log or notebook? The pipeline used to be a flat numbered
+> `scripts/01_…`–`58_…`. [`docs/script_map.md`](docs/script_map.md) maps every old name to
+> its current path.
+
+## Install
 
 Requires Python ≥ 3.10.
 
 ```bash
-git clone https://github.com/eliashossain001/corrfilter.git
-cd corrfilter
 python -m venv .venv && source .venv/bin/activate
 pip install -e .            # add ".[dev]" for pytest + ruff
 ```
 
-Judges load open-weight models via `transformers`. Set a Hugging Face token (for gated
-models) in a `.env` file at the repo root — it is gitignored and never committed:
+The editable install is what puts `corrfilter` on the path; scripts import it directly and
+do no `sys.path` manipulation. Put API credentials in a gitignored `.env` at the repo root:
 
 ```bash
-echo "HF_TOKEN=hf_xxx" > .env
+echo "HF_TOKEN=hf_xxx"           >  .env    # gated open-weight models
+echo "GEMNI_API_KEY=..."         >> .env    # Gemini frontier bank
+echo "OPEN_ROUTER_API_KEY=..."   >> .env    # OpenAI / Anthropic / xAI via OpenRouter
 ```
 
-## Quick start — H1 (measuring dependence)
+## Quick start — measuring dependence
 
 ```bash
-python scripts/01_build_calibration_set.py                        # RewardBench v2 calibration set
-python scripts/02_run_judges.py --config configs/judge_bank.yaml  # run the 10-judge bank (cached)
-python scripts/03_compute_correlation.py                          # ρ̄, n_eff, eigenspectrum
-python scripts/04_h1_analysis.py                                  # hypothesis tests + figures
+python scripts/calibration/build_calibration_set.py                                # RewardBench v2 calibration set
+python scripts/calibration/run_judge_bank.py --config configs/judge_bank.yaml      # 10-judge bank (GPU, cached)
+python scripts/dependence/compute_correlation.py                                   # ρ̄, n_eff, eigenspectrum
+python scripts/dependence/h1_family_prompt_contrast.py                             # family/prompt contrasts + figures
 ```
 
-Outputs land in `experiments/h1_measurement/`; the writeup is in `reports/h1_measurement.md`.
+Everything lands in `experiments/h1_measurement/`. The first step is the only one that
+needs a GPU; once the vote cache exists, every analysis below runs on a laptop CPU.
 
-## Reproducibility
+## Reproducing the results
 
-The `scripts/` directory is an **ordered pipeline** — file names are numbered in dependency
-order. Broadly:
+Vote collection happens once per bank; all analysis replays the cache.
 
-| Scripts | Stage |
-|---------|-------|
-| `01`–`04` | H1: build calibration set, run judges, compute correlation, analyze dependence |
-| `05`–`09` | CFI: manifest, votes, correlated-failure analysis, CorrFilter run |
-| `10`–`19` | Adaptive-r, poisoned-UltraFeedback attacks, position poisoning, cluster/bias filters, regime router |
-| `20`–`27` | Robustness, confidence intervals, mainstream-alignment integration, dependence replication, simulations |
-| `28`–`32` | GRPO/DPO-trained judges, base-vs-trained comparison, abstention robustness, seed contrast |
+| Want | Run |
+|---|---|
+| Core dependence tables and filter comparison | `bash scripts/reproduce_all.sh` |
+| CFI experiment end to end (replay mode) | `bash scripts/cfi/run_experiment.sh` |
+| CorrFilter vs. consensus at matched retention | `python -m corrfilter.analysis.filters --bank configs/judge_bank.yaml --manifest <manifest>` |
+| Dependence metrics for any bank | `python -m corrfilter.analysis.dependence --bank <config.yaml> --manifest <manifest> --label <name>` |
+| Frontier banks (spends money; dry-run by default) | `python scripts/frontier/run_gemini_judges.py --live`, `python scripts/frontier/run_openrouter_judges.py --live` |
+| Routing benchmarks | `python scripts/routing/build_crossed_pool.py` then `run_crossed_router.py` / `build_mixed_pool.py` + `run_mixed_eval.py` |
+| Cross-task feasibility screen | `python scripts/crosstask/run_screening_votes.py` then `analyze_screening.py` |
+| Paper figures | `python scripts/figures/paper_figures.py`, `tier_figure.py`, `summary_figure.py` |
 
-Helper analysis scripts live in `scripts/analysis/` (bootstrap CIs, dependence tables,
-repro tables). Judge banks and calibration sets are fully specified in `configs/*.yaml`, so
-a run is reproducible from `(config, script)` alone. Vote results are cached on disk, so
-re-running a stage reuses prior judge calls instead of recomputing them.
+Banks and calibration sets are fully specified in `configs/*.yaml`, so a run is reproducible
+from `(config, script)` alone. Each stage writes a `manifest.json` recording git commit,
+model IDs, dataset hashes, and seeds.
 
-### Full cluster run (strengthening phase)
+Standing conventions, held across every experiment: seeds `run=20260707`,
+`bootstrap=20260706`, `position=20260601`; paired item bootstrap with B=2000 and 95%
+percentile intervals; retention matched across methods within a bank; Ledoit-Wolf shrunk
+correlation with the listwise/pairwise selection rule in `corrfilter.analysis.dependence`.
 
-The complete set of GPU experiments (DPO-trained judges, downstream DPO policies, extended
-15–20 judge bank) is orchestrated for SLURM. See **[README_NEWTON.md](README_NEWTON.md)**:
+### Cluster runs
+
+The GPU set (DPO/GRPO-trained judges, downstream DPO policies, the extended 16-judge bank)
+is orchestrated for SLURM — see [`docs/cluster_runbook.md`](docs/cluster_runbook.md):
 
 ```bash
 bash jobs/newton/setup_env.sh     # venv + deps + stage models
 sbatch jobs/newton/smoke_test.slurm
-bash jobs/newton/run_all.sh       # CPU stages inline + submit GPU DAG (resumable)
+bash jobs/newton/run_all.sh       # CPU stages inline, GPU DAG submitted (resumable)
 ```
-
-Each stage writes a `manifest.json` recording git commit, model IDs, dataset hashes, and
-seeds for provenance.
 
 ## Tests
 
 ```bash
-pytest            # or: pip install -e ".[dev]" && pytest
+pytest            # 213 tests
+ruff check src scripts tests
 ```
 
-Covers correlation estimation, effective sample size, filtering, consensus, adaptive-r,
-CFI banks/triggers/retention, and prompt handling.
+Coverage includes correlation estimation, effective sample size, filtering and matched
+retention, consensus and tie policy, adaptive-R, CFI banks/triggers/retention, the routing
+module's parity with the original regime routers, the feasibility gates, the API-judge
+adapters, and the cost meter.
 
 ## Citation
 
-If you use this code, please cite:
-
 ```bibtex
-@article{hossain2026consensus,
-  title   = {Consensus Is Not Reliability: A Taxonomy of Dependence Failures in LLM Judge Banks},
+@article{hossain2026agreement,
+  title   = {Agreement Is Not Evidence: Measuring Error Dependence and Effective
+             Evidence in {LLM} Judge Consensus},
   author  = {Hossain, Elias},
   year    = {2026}
 }
 ```
-
-## License
-
-See repository for license terms.

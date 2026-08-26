@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from corrfilter.cfi.banks import CFIBankVariant
 from corrfilter.cfi.biases import BiasMechanism
 from corrfilter.cfi.manifest import CFITriggers

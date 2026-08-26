@@ -1,0 +1,68 @@
+# Gemini frontier-judge pilot bank (single-provider; see paper limitations).
+#
+# Model IDs were enumerated from the live ListModels endpoint on 2026-07-25.
+# Fixed IDs are used wherever the API exposes one; the only usable Pro-class
+# model on this key is the preview ID (gemini-2.5-pro returns 404 "no longer
+# available to new users" and gemini-3-pro-preview is retired).
+#
+# thinking_level: "minimal" disables chain-of-thought for the Flash models;
+# the Pro model rejects "minimal" so it runs at its lowest supported level
+# ("low", ~150 thought tokens/call). Recorded as an experimental control.
+#
+# Prices are USD per 1M tokens (input, output) used for cost accounting;
+# token counts from usageMetadata are the ground truth and are logged.
+
+provider: gemini-rest
+api_key_env: GEMNI_API_KEY   # variable name as present in .env; GEMINI_API_KEY/GOOGLE_API_KEY also checked
+
+prompt_style: pairwise        # same pairwise template as the open-weight bank
+
+generation:
+  temperature: 0.0
+  max_output_tokens: 64       # flash models; pro override below
+
+runtime:
+  position_seed: 20260601     # same protocol as the open-weight bank
+  shuffle_position: true
+  workers: 6
+  max_retries: 5
+  backoff_base_s: 2.0
+  backoff_max_s: 60.0
+  request_timeout_s: 120
+  checkpoint_every: 25        # flush votes to parquet every N items (resumable)
+
+bank:
+  - id: gemini-3.1-pro
+    model: gemini-3.1-pro-preview
+    family: gemini-pro
+    scale: pro
+    thinking_level: low       # minimum supported by this model
+    max_output_tokens: 1024   # headroom for thought tokens
+    price_in: 2.00
+    price_out: 12.00
+  - id: gemini-3.6-flash
+    model: gemini-3.6-flash
+    family: gemini-flash
+    scale: flash
+    thinking_level: minimal
+    price_in: 0.30
+    price_out: 2.50
+  - id: gemini-3.5-flash-lite
+    model: gemini-3.5-flash-lite
+    family: gemini-flash-lite
+    scale: flash-lite
+    thinking_level: minimal
+    price_in: 0.10
+    price_out: 0.40
+
+datasets:
+  rewardbench:
+    manifest: experiments/h1_measurement/results/calibration_manifest.parquet
+    items_file: outputs/cfi/cfi_subset_items.txt   # existing 400-item stratified subset
+  pku:
+    manifest: outputs/pku_saferlhf/pku_manifest.parquet
+    subsample: 300            # stratified by subset (safe/unsafe), seeded
+    seed: 20260601
+
+output:
+  root: outputs/gemini_bank   # gitignored (under outputs/)

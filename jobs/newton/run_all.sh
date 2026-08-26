@@ -26,8 +26,8 @@ echo "########## Buckets 1/5/6: reproduce + qualitative + summary figure (CPU) #
 J_CPU=""
 if [ "$LOCAL" = 1 ] || ! command -v sbatch >/dev/null; then
   bash scripts/reproduce_all.sh
-  $PY scripts/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
-  $PY scripts/figures/make_summary_figure.py --method-label GRPO \
+  $PY scripts/figures/qualitative_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
+  $PY scripts/figures/summary_figure.py --method-label GRPO \
     --trained-label grpo_trained_6 --filters-trained-label grpo || true
 else
   J_CPU=$(SB jobs/newton/cpu_stages.slurm)

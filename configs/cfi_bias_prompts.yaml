@@ -8,7 +8,7 @@
 #
 # The calibration items, gold labels, and decoder are never modified — only the
 # judge's instruction changes. Votes are produced by real GPU inference
-# (scripts/07_run_cfi_bank.py) and cached per (mechanism, logical judge).
+# (scripts/cfi/run_bank_gpu.py) and cached per (mechanism, logical judge).
 #
 # Each mechanism also declares a heuristic `trigger` so the analysis stage can
 # split triggered vs non-triggered items (Part B, agreement-vs-accuracy curve).

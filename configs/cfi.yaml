@@ -1,7 +1,7 @@
 # Correlated Failure Injection (Experiment 2) configuration.
 #
 # This config describes how the CFI experiment is built on top of the H1
-# calibration set and judge bank. It is read by scripts/05–08. None of the
+# calibration set and judge bank. It is read by the scripts/cfi/ stage. None of the
 # H1 outputs (votes, R, figures) are modified by the CFI scripts.
 
 # Source artefacts produced by Experiment 1.
@@ -42,7 +42,7 @@ triggers:
 mode: replay
 
 # Real-mode runtime (ignored when mode == 'replay'). Mirrors the H1 bank
-# runtime block but is only consulted when scripts/06 is invoked with --mode real.
+# runtime block but is only consulted when scripts/cfi/run_bank_replay.py is invoked with --mode real.
 real_runtime:
   votes_dir: experiments/h2_cfi/votes
   batch_size: 4

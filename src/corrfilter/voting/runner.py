@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Callable, Iterable
 
 from tqdm.auto import tqdm
 

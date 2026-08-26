@@ -25,7 +25,6 @@ from corrfilter.cfi.biases import BiasMechanism
 from corrfilter.cfi.manifest import CFITriggers
 from corrfilter.data import CalibrationItem
 
-
 # Vocabularies driving the polish / refusal / sycophancy biased predictions.
 _CONFIDENT_RE = re.compile(
     r"\b(definitely|certainly|clearly|obviously|surely|undoubtedly|"
@@ -212,9 +211,9 @@ def load_clean_votes_from_cache(
             continue
         view: dict[str, tuple[int, bool]] = {}
         for row in df.itertuples(index=False):
-            view[str(getattr(row, "item_id"))] = (
-                int(getattr(row, "vote")),
-                bool(getattr(row, "position_swapped")),
+            view[str(row.item_id)] = (
+                int(row.vote),
+                bool(row.position_swapped),
             )
         out[lid] = view
     return out

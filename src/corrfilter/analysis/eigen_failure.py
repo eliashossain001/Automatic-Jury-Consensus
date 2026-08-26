@@ -15,7 +15,7 @@ turns those judge-space directions into *item-level* evidence:
 
 Everything here is analysis-only and deterministic: no inference, no RNG.
 The error matrix ``E``, correlation ``R``, and judge order are reused verbatim
-from the H1 ``correlation.npz`` produced by ``scripts/03_compute_correlation.py``.
+from the H1 ``correlation.npz`` produced by ``scripts/dependence/compute_correlation.py``.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from corrfilter.analysis.failure_modes import EigenDirection, top_eigen_directions
+from corrfilter.analysis.failure_modes import EigenDirection
 from corrfilter.cfi.replay import _AGREE_RE, _CONFIDENT_RE, _REFUSAL_RE, _count
 from corrfilter.data import CalibrationItem
 

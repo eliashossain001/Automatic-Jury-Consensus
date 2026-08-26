@@ -17,10 +17,10 @@ echo "### Bucket 1: reproduce current paper results ###"
 bash scripts/reproduce_all.sh
 
 echo "### Bucket 5: qualitative failure examples ###"
-$PY scripts/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
+$PY scripts/figures/qualitative_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
 
 echo "### Bucket 6: summary figure (GRPO) ###"
-$PY scripts/figures/make_summary_figure.py --method-label GRPO \
+$PY scripts/figures/summary_figure.py --method-label GRPO \
   --trained-label grpo_trained_6 --filters-trained-label grpo || true
 
 touch "$RESULTS/.done/cpu_stages"

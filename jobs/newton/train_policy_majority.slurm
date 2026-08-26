@@ -17,16 +17,16 @@ mkdir -p "$RD"
 
 # build filtered datasets once (idempotent; CPU) — needs the GRPO judge votes present
 if [ ! -f "$DD/dpo_majority.jsonl" ]; then
-  $PY scripts/build_filtered_dpo_data.py --bank configs/grpo_judge_bank.yaml \
+  $PY scripts/downstream/build_filtered_dpo_data.py --bank configs/grpo_judge_bank.yaml \
     --manifest "$CAL_MANIFEST" --retention "$RETENTION" --holdout-frac 0.20 --out-dir "$DD"
 fi
 
 echo "### DPO-train majority policy ($POLICY_BASE) ###"
-$PY scripts/train_policy_dpo.py --data "$DD/dpo_majority.jsonl" --base-model "$POLICY_BASE" \
+$PY scripts/downstream/train_policy_dpo.py --data "$DD/dpo_majority.jsonl" --base-model "$POLICY_BASE" \
   --output "$MD" --epochs 2 --beta 0.1 --lr 5e-6 --seed "$SEED" $(prec_flag)
 
 echo "### eval majority policy on clean holdout ###"
-$PY scripts/eval_policy.py --base-model "$POLICY_BASE" --adapter "$MD" \
+$PY scripts/downstream/eval_policy.py --base-model "$POLICY_BASE" --adapter "$MD" \
   --manifest "$DD/eval_clean.jsonl" --n 0 --tag majority \
   --out "$RD/eval_majority.csv" $(prec_flag)
 touch "$RESULTS/.done/train_policy_majority"

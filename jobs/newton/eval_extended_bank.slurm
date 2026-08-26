@@ -14,11 +14,11 @@ source jobs/newton/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 echo "### [1/2] extended-bank inference (cached votes are skipped automatically) ###"
-$PY scripts/02_run_judges.py --bank configs/judge_bank_extended.yaml \
+$PY scripts/calibration/run_judge_bank.py --bank configs/judge_bank_extended.yaml \
   --calibration configs/calibration.yaml --sort-by-length
 
 echo "### [2/2] dependence vs nominal-n + saturation figure ###"
-$PY scripts/run_extended_bank.py --bank configs/judge_bank_extended.yaml \
+$PY scripts/dependence/extended_bank_scaling.py --bank configs/judge_bank_extended.yaml \
   --manifest "$CAL_MANIFEST" --out-dir outputs/extended_bank
 touch "$RESULTS/.done/eval_extended_bank"
 echo "EVAL_EXTENDED_BANK_DONE"

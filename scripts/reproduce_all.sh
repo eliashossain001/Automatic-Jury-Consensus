@@ -19,27 +19,27 @@ BASE6=(--judge-id qwen-2.5-7b::pairwise --judge-id qwen-2.5-7b::likert
 
 echo "### [1/5] Dependence metrics (rho_bar, n_eff, eigen-rank, co-failure, contrasts) ###"
 rm -f "$DEP"
-python scripts/analysis/compute_dependence.py --bank configs/judge_bank.yaml    --manifest "$CAL" --label rewardbench_base_10 --out "$DEP"
-python scripts/analysis/compute_dependence.py --bank configs/judge_bank_uf.yaml --manifest "$UF"  --label ultrafeedback_base_10 --out "$DEP"
-python scripts/analysis/compute_dependence.py --bank configs/judge_bank.yaml    --manifest "$CAL" --label rewardbench_base_matched6 "${BASE6[@]}" --out "$DEP"
-python scripts/analysis/compute_dependence.py --bank configs/grpo_judge_bank.yaml --manifest "$CAL" --label grpo_trained_6 "${GRPO_IDS[@]}" --out "$DEP"
+python -m corrfilter.analysis.dependence --bank configs/judge_bank.yaml    --manifest "$CAL" --label rewardbench_base_10 --out "$DEP"
+python -m corrfilter.analysis.dependence --bank configs/judge_bank_uf.yaml --manifest "$UF"  --label ultrafeedback_base_10 --out "$DEP"
+python -m corrfilter.analysis.dependence --bank configs/judge_bank.yaml    --manifest "$CAL" --label rewardbench_base_matched6 "${BASE6[@]}" --out "$DEP"
+python -m corrfilter.analysis.dependence --bank configs/grpo_judge_bank.yaml --manifest "$CAL" --label grpo_trained_6 "${GRPO_IDS[@]}" --out "$DEP"
 
 echo "### [2/5] Cross-dataset replication + GRPO base-vs-trained tables ###"
-python scripts/analysis/make_repro_tables.py --dependence "$DEP" --out-dir outputs/tables
+python scripts/figures/repro_tables.py --dependence "$DEP" --out-dir outputs/tables
 
 echo "### [3/5] Filter comparison + CorrFilter-vs-consensus bootstrap CIs ###"
-python scripts/analysis/run_filters.py --bank configs/grpo_judge_bank.yaml --manifest "$CAL" \
+python -m corrfilter.analysis.filters --bank configs/grpo_judge_bank.yaml --manifest "$CAL" \
   --label grpo --out outputs/tables/filters.csv --gain-out outputs/tables/corrfilter_gain.csv "${GRPO_IDS[@]}"
-python scripts/analysis/run_filters.py --bank configs/judge_bank.yaml --manifest "$CAL" \
+python -m corrfilter.analysis.filters --bank configs/judge_bank.yaml --manifest "$CAL" \
   --label base_matched6 --out outputs/tables/filters.csv --gain-out outputs/tables/corrfilter_gain.csv "${BASE6[@]}"
 
 echo "### [4/5] Figures (base-vs-GRPO dependence; n_eff ceiling) ###"
-python scripts/30_base_vs_grpo_figure.py >/dev/null && \
+python scripts/training/base_vs_grpo_figure.py >/dev/null && \
   cp -f results/grpo_judges/figures/base_vs_grpo_dependence.pdf outputs/figures/ 2>/dev/null || true
-python scripts/analysis/make_repro_tables.py --dependence "$DEP" --figure outputs/figures/neff_vs_ceiling.pdf --out-dir outputs/tables
+python scripts/figures/repro_tables.py --dependence "$DEP" --figure outputs/figures/neff_vs_ceiling.pdf --out-dir outputs/tables
 
 echo "### [5/5] OPTIONAL: bias-cluster / router (reproduced by their own scripts if present) ###"
-for s in 16_cluster_filter.py 18_regime_router.py 19_unified_router_v2.py; do
+for s in bias_cluster.py regime_router.py unified_router.py; do
   if [ -f "scripts/$s" ]; then echo "  available: scripts/$s (run manually to regenerate its outputs/ dir)"; fi
 done
 

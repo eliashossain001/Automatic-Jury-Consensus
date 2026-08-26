@@ -1,6 +1,6 @@
 """Assemble CFI bank variants from cached real votes (Bucket 3 analysis side).
 
-The real-inference runner (scripts/07) caches biased votes per
+The real-inference runner (scripts/cfi/run_bank_gpu.py) caches biased votes per
 ``(mechanism, logical_judge)`` and the clean control reuses the H1 cache. This
 module assembles, for any ``(mechanism, biased_ratio)`` pair, the vote matrix a
 bank with that fraction of biased judges would produce — selecting biased vs
@@ -59,9 +59,9 @@ def load_vote_views(
         view: dict[str, tuple[int, bool]] = {}
         if df is not None:
             for row in df.itertuples(index=False):
-                view[str(getattr(row, "item_id"))] = (
-                    int(getattr(row, "vote")),
-                    bool(getattr(row, "position_swapped")),
+                view[str(row.item_id)] = (
+                    int(row.vote),
+                    bool(row.position_swapped),
                 )
         out[lid] = view
     return out

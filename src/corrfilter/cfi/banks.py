@@ -16,8 +16,8 @@ makes the curves comparable across ratios.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 import numpy as np
 
