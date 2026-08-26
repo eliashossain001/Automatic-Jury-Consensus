@@ -99,7 +99,8 @@ corrfilter/
 │   └── figures/             every paper figure and table
 ├── configs/                 judge-bank and calibration-set definitions (YAML)
 ├── jobs/newton/             SLURM scripts for the cluster runs
-├── docs/                    cluster runbook, experiment log, script map, phase-2 plan
+├── docs/                    cluster runbook, experiment log, script map, phase-2 plan,
+│                            reviewer-risk register, manuscript appendix edits
 ├── tests/                   213 unit tests (pytest)
 └── pyproject.toml           package + dev tooling (ruff, pytest)
 ```
@@ -111,7 +112,9 @@ traces to a file in one of them.
 
 > Coming from an older log or notebook? The pipeline used to be a flat numbered
 > `scripts/01_…`–`58_…`. [`docs/script_map.md`](docs/script_map.md) maps every old name to
-> its current path.
+> its current path. The manuscript no longer names scripts at all —
+> [`docs/paper_appendix_edits.md`](docs/paper_appendix_edits.md) records the appendix
+> rewrite that removed that coupling.
 
 ## Install
 
