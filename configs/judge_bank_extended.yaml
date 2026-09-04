@@ -1,5 +1,5 @@
 # Extended judge bank (Bucket 4) — base 5 models + added families/sizes for n_eff saturation.
-# Added models are all cached in /shared/models. 4-bit so 12-14B fit on one H100/A100.
+# Added models are all cached in $HF_HOME. 4-bit so 12-14B fit on one H100/A100.
 # 10 base + up to 8 added = up to ~18-20 logical judges (x2 prompt styles).
 bank:
   - {id: llama-3.1-8b,   family: llama,   scale: 8B,   hf_model: meta-llama/Llama-3.1-8B-Instruct,   quantization: nf4, dtype: bfloat16}

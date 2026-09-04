@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=cpu_stages
 #SBATCH --partition=normal
-#SBATCH --account=nyousefi
+#SBATCH --account=CHANGE_ME   # set to your SLURM account
 #SBATCH --qos=normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
@@ -10,7 +10,7 @@
 # Buckets 1/5/6 (reproduce, qualitative, summary figure) — CPU, but on a COMPUTE node
 # because the login node's memory cgroup OOMs on pandas/sklearn imports.
 set -euo pipefail
-source jobs/newton/env.sh
+source jobs/slurm/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 echo "### Bucket 1: reproduce current paper results ###"

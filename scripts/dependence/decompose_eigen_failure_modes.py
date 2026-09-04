@@ -18,7 +18,7 @@ and runs no inference.
 
 Usage:
     python scripts/dependence/decompose_eigen_failure_modes.py \
-        --project-root /home/elias/elias_projects/corrfilter
+        --project-root /path/to/corrfilter
 """
 
 from __future__ import annotations

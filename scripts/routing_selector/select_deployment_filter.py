@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Leakage-safe deployment-level filter selection.
 
-This is the strict version of the experiment proposed to Prof. Lim:
+This is the strict version of the experiment proposed in review:
 
 * one deployment contains 300 items;
 * 100 trusted calibration items produce every selector feature and CorrFilter R;

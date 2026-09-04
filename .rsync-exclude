@@ -1,4 +1,4 @@
-# heavy / regenerable — excluded from the Newton transfer
+# heavy / regenerable — excluded from the cluster transfer
 .venv/
 .hf_cache/
 .git/

@@ -14,7 +14,7 @@ Outputs (under outputs/cfi/):
 
 Usage:
     python scripts/regimes/analyze_cofailure_experiment.py --config configs/cfi_bias_prompts.yaml \
-        --project-root /home/elias/elias_projects/corrfilter
+        --project-root /path/to/corrfilter
 """
 
 from __future__ import annotations

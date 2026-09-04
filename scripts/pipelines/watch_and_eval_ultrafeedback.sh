@@ -2,7 +2,7 @@
 # Detached watcher: wait until the UF judge run is complete (all 10 judges ×
 # 2000 votes = 20000), then run the H2b evaluator automatically. Robust to a
 # judge process dying early (it will run the eval once no runner remains).
-cd /home/elias/elias_projects/corrfilter || exit 1
+cd /path/to/corrfilter || exit 1
 LOG=outputs/synthetic_poisoned_ultrafeedback/uf_watcher.log
 echo "watcher started $(date)" >> "$LOG"
 while true; do

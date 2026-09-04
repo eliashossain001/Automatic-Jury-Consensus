@@ -49,151 +49,179 @@ aggregation rule universally replaces majority voting.
 6. Recalibrate after changing the task or judge bank. Treat learned selection as protection
    against negative transfer, not proof that it improves on majority.
 
-## Repository layout
+## Folder structure
 
 ```text
-corrfilter/
-├── src/corrfilter/              Installable library (the reusable core)
-│   ├── analysis/                Agreement, hypothesis tests, failure decomposition
-│   ├── cfi/                     Consensus, CorrFilter, adaptive-R, clusters, metrics
-│   ├── correlation/             Error correlation, shrinkage, eigenstructure, n_eff
-│   ├── data/                    Preference and generic binary-task adapters
-│   ├── judges/                  HF, Gemini, OpenRouter, and forced-choice judges
-│   ├── voting/                  Cached vote collection
-│   ├── evaluation.py            Tie-safe, retention-matched evaluation primitives
-│   ├── filtering.py             Core filtering entry points
-│   └── routing.py               Shared deployment-routing primitives
-│
-├── scripts/                     Experiment drivers, grouped by pipeline stage.
-│   │                            Listed below in execution order; the stage
-│   │                            table under "Reproducing the analyses" repeats
-│   │                            that order, since the directory names alone do
-│   │                            not imply it.
-│   ├── calibration/             Build the trusted panel and collect bank votes
-│   │   ├── build_calibration_set.py        Stratified RewardBench v2 panel
-│   │   ├── run_judge_bank.py               Run every logical judge, cache votes
-│   │   ├── sweep_extended_bank.py          Dependence vs nominal judge count
-│   │   ├── evaluate_judge_bank.py          Trained bank vs matched base bank
-│   │   └── write_run_manifest.py           Provenance manifest for a run
-│   │
-│   ├── dependence/              Core measurement (rho_bar, n_eff) — Sec. 5.1
-│   │   ├── compute_error_correlation.py    R, n_eff, eigenspectrum, heatmap
-│   │   ├── test_diversification_contrasts.py  Family/prompt-style contrasts
-│   │   ├── decompose_eigen_failure_modes.py   Eigenvectors to item-level modes
-│   │   ├── estimate_position_aware_dependence.py  Position-conditioned R
-│   │   ├── replicate_dependence_ultrafeedback.py  Second-dataset replication
-│   │   ├── simulate_oracle_independence.py    Matched independent-bank control
-│   │   ├── analyze_nonerror_correlation.py    Correct votes are correlated too
-│   │   ├── test_panel_significance_flip.py    Pooled vs item-level verdicts
-│   │   └── analyze_prompt_length_effect.py    Length as a dependence covariate
-│   │
-│   ├── robustness/              Does the measurement survive perturbation?
-│   │   ├── analyze_bank_composition.py     73 subbanks of the cached votes
-│   │   ├── compute_confidence_intervals.py Bootstrap and paired-bootstrap CIs
-│   │   ├── analyze_gold_label_sensitivity.py  1-10% gold-label flips, 40 seeds
-│   │   ├── analyze_abstention_robustness.py   Dependence on committed votes
-│   │   ├── compare_training_seeds.py       Do same-model seeds co-fail?
-│   │   ├── find_natural_subgroup_cases.py  Unpoisoned subgroup signatures
-│   │   ├── analyze_natural_subgroup_stability.py  Stability of that estimate
-│   │   ├── extract_failure_examples.py     Qualitative consensus failures
-│   │   └── diagnose_tie_breaking.py        Even-bank tie-handling diagnostic
-│   │
-│   ├── regimes/                 Controlled dependence-regime interventions
-│   │   ├── build_cofailure_manifest.py     Per-item trigger annotations
-│   │   ├── run_cofailure_votes_replay.py   Deterministic CPU replay (no GPU)
-│   │   ├── run_cofailure_votes_gpu.py      Real biased-prompt re-inference
-│   │   ├── compute_cofailure_metrics.py    Per-item consensus/CorrFilter scores
-│   │   ├── analyze_cofailure_experiment.py Agreement-vs-accuracy curves
-│   │   ├── plot_cofailure_figures.py       Figures from the analysis CSVs
-│   │   ├── build_poisoned_ultrafeedback.py Weak-dependence contamination
-│   │   ├── run_ultrafeedback_judges.py     Content-based votes on those pairs
-│   │   ├── evaluate_poisoned_ultrafeedback.py  Filters at matched retention
-│   │   ├── run_position_aligned_poisoning.py   Vulnerable-subgroup regime
-│   │   └── discover_natural_mechanisms.py  Non-position mechanisms, zero inference
-│   │
-│   ├── filters/                 Aggregation rules used as diagnostic probes
-│   │   ├── run_corrfilter_baselines.py     CorrFilter vs naive baselines
-│   │   ├── run_adaptive_r_experiment.py    How R is estimated in deployment
-│   │   ├── validate_direction_randomized_r.py  Gold-free R under randomization
-│   │   ├── run_bias_cluster_filter.py      Support outside a vulnerable cluster
-│   │   ├── learn_bias_cluster.py           Learn that cluster from ~100 items
-│   │   ├── run_corrfilter_plus.py          Independence-reward variant
-│   │   └── approximate_lowrank_corrfilter.py   Factor approximation of R at scale
-│   │
-│   ├── frontier/                Frontier judge banks — Sec. 5.2
-│   │   ├── run_gemini_judges.py            Gemini bank (dry-run by default)
-│   │   ├── analyze_gemini_bank.py          Gemini vs the open-weight bank
-│   │   ├── run_openrouter_judges.py        GPT / Claude / Grok via OpenRouter
-│   │   ├── analyze_openrouter_pilot.py     Multi-provider pilot analysis
-│   │   └── analyze_multiprovider_banks.py  All banks on identical items
-│   │
-│   ├── preference_training/     Does DPO/GRPO cause the frontier pattern? — Sec. 5.3
-│   │   ├── train_judge_grpo.py             GRPO-train one judge (LoRA)
-│   │   ├── train_judge_dpo.py              DPO-train one judge (LoRA)
-│   │   ├── evaluate_grpo_corrfilter.py     Co-failure metrics for trained banks
-│   │   ├── simulate_grpo_reward_contamination.py  Offline reward-signal pilot
-│   │   ├── run_forced_choice_banks.py      Matched base/GRPO/DPO forced choice
-│   │   └── analyze_forced_choice_banks.py  The matched dependence comparison
-│   │
-│   ├── routing_selector/        Regime routing and the deployment selector — Sec. 5.5
-│   │   ├── run_regime_router.py            Classify regime, map to a filter
-│   │   ├── run_unified_router.py           Soft, confidence-weighted routing
-│   │   ├── evaluate_routing_accuracy.py    Routing accuracy against ground truth
-│   │   ├── run_mixed_regime_benchmark.py   Mixed-regime deployment pool
-│   │   ├── test_router_noninferiority.py   Preregistered non-inferiority test
-│   │   ├── train_router_dev.py             Small-sample dev-set router check
-│   │   ├── select_deployment_filter.py     Strict 456-deployment selector
-│   │   └── transfer_selector_to_aggrefact.py   Frozen transfer, 8 components
-│   │
-│   ├── cross_task_screen/       Preregistered feasibility screen (incl. nulls)
-│   │   ├── run_factuality_judges.py        Pointwise factuality vote collection
-│   │   ├── report_factuality_pilot.py      Judge-competence pilot gate
-│   │   ├── run_factuality_frontier_judges.py   Frontier factuality bank
-│   │   ├── run_screening_votes.py          GPU vote collection for the campaign
-│   │   ├── analyze_screening_campaign.py   Unified routing-feasibility table
-│   │   ├── build_actionability_artifacts.py    Figure + LaTeX fragments
-│   │   ├── run_nei_mechanism_pilot.py      Preregistered NEI mechanism pilot
-│   │   ├── collect_bankd_votes.py          Full bank-D collection (gated)
-│   │   ├── collect_aggrefact_votes.py      AggreFact component-level votes
-│   │   ├── run_frontier_code_pilot.py      Pointwise code-judging pilot
-│   │   └── run_expanded_aggregation.py     Expanded aggregation family
-│   │
-│   ├── downstream/              Does retained contamination reach training?
-│   │   ├── build_filtered_dpo_data.py      Preference files at matched retention
-│   │   ├── train_policy_dpo.py             DPO-train a small policy
-│   │   ├── evaluate_policy.py              Held-out reward accuracy and margins
-│   │   ├── summarize_downstream.py         Paired-CI policy comparison table
-│   │   └── integrate_reward_model_weights.py   Filtering signals as loss weights
-│   │
-│   ├── figures/                 Paper figure and table generators
-│   │   ├── make_paper_figures.py           Shared style plus the main figures
-│   │   ├── make_tier_figure.py             Capability-tier block structure of R
-│   │   ├── make_selector_figure.py         Deployment-selector summary
-│   │   ├── make_base_vs_grpo_figure.py     Base vs GRPO dependence panels
-│   │   ├── make_training_summary_figure.py Base to preference-trained overview
-│   │   ├── make_cross_dataset_figure.py    RewardBench / UltraFeedback / PKU
-│   │   ├── make_taxonomy_hero.py           Dependence-regime taxonomy diagram
-│   │   └── make_repro_tables.py            Paper-ready tables from dependence.csv
-│   ├── lib/                     Shared helpers imported by the stage scripts
-│   │   ├── compute_dependence.py           Canonical dependence estimator
-│   │   ├── bootstrap_ci.py                 Bootstrap and paired-bootstrap CIs
-│   │   └── run_filters.py                  Matched-retention filter comparison
-│   └── pipelines/               Shell drivers that chain the stages
-│       ├── reproduce_all.sh                End-to-end reproduction
-│       ├── run_bank_parallel.sh            Parallel bank vote collection
-│       ├── run_cofailure_experiment.sh     Stage-04 co-failure chain
-│       └── watch_and_eval_ultrafeedback.sh Watch-and-evaluate helper
-│
-├── configs/                     Pinned judge-bank and experiment configuration
-├── experiments/router_upgrade/  Deployment-selector experiment source
-├── jobs/newton/                 Reproducible SLURM workflows
-├── tests/                       CPU unit and regression tests
+<repo-root>/
+├── README.md
+├── README_CLUSTER.md                       # SLURM runbook for the GPU stages
 ├── pyproject.toml
-└── README_NEWTON.md             Cluster setup and execution notes
+├── .gitignore
+├── .rsync-exclude                          # Excluded from cluster transfers
+│
+├── configs/                                # Pinned YAML configuration
+│   ├── judge_bank.yaml                     # Primary ten-judge open-weight bank
+│   ├── judge_bank_extended.yaml            # 16-judge bank, 1.5B-14B
+│   ├── judge_bank_gemini.yaml              # Gemini frontier bank
+│   ├── judge_bank_openrouter.yaml          # GPT / Claude / Grok bank
+│   ├── judge_bank_uf.yaml, judge_bank_pku.yaml
+│   ├── calibration.yaml, calibration_pku.yaml
+│   ├── cfi.yaml, cfi_bias_prompts.yaml     # Co-failure injection settings
+│   ├── grpo_judge_bank.yaml, grpo_judge_bank_hightok.yaml, grpo_seed_bank.yaml
+│   ├── dpo_judge.yaml
+│   └── mainstream_alignment_integration.yaml
+│
+├── src/
+│   └── corrfilter/                         # Importable Python package
+│       ├── analysis/                       # Agreement, hypothesis tests, decomposition
+│       ├── cfi/                            # Consensus, CorrFilter, adaptive-R, clusters
+│       ├── correlation/                    # Error correlation, shrinkage, n_eff
+│       ├── data/                           # Preference and binary-task adapters
+│       ├── judges/                         # HF, Gemini, OpenRouter, forced-choice
+│       ├── voting/                         # Cached vote collection
+│       ├── viz/                            # Shared plotting helpers
+│       ├── evaluation.py                   # Tie-safe, retention-matched primitives
+│       ├── filtering.py                    # Core filtering entry points
+│       └── routing.py                      # Shared deployment-routing primitives
+│
+├── scripts/                                # Experiment drivers, grouped by stage
+│   ├── calibration/                        # 1. Trusted panel and bank votes
+│   │   ├── build_calibration_set.py        # Stratified RewardBench v2 panel
+│   │   ├── run_judge_bank.py               # Run every judge, cache votes
+│   │   ├── sweep_extended_bank.py          # Dependence vs nominal judge count
+│   │   ├── evaluate_judge_bank.py          # Trained bank vs matched base bank
+│   │   └── write_run_manifest.py           # Provenance manifest for a run
+│   │
+│   ├── dependence/                         # 2. Core measurement (Sec. 5.1)
+│   │   ├── compute_error_correlation.py    # R, n_eff, eigenspectrum, heatmap
+│   │   ├── test_diversification_contrasts.py  # Family / prompt-style contrasts
+│   │   ├── decompose_eigen_failure_modes.py   # Eigenvectors to item-level modes
+│   │   ├── estimate_position_aware_dependence.py  # Position-conditioned R
+│   │   ├── replicate_dependence_ultrafeedback.py  # Second-dataset replication
+│   │   ├── simulate_oracle_independence.py    # Matched independent-bank control
+│   │   ├── analyze_nonerror_correlation.py    # Correct votes correlate too
+│   │   ├── test_panel_significance_flip.py    # Pooled vs item-level verdicts
+│   │   └── analyze_prompt_length_effect.py    # Length as a dependence covariate
+│   │
+│   ├── robustness/                         # 3. Does the measurement survive?
+│   │   ├── analyze_bank_composition.py     # 73 subbanks of the cached votes
+│   │   ├── compute_confidence_intervals.py # Bootstrap and paired-bootstrap CIs
+│   │   ├── analyze_gold_label_sensitivity.py  # 1-10% label flips, 40 seeds
+│   │   ├── analyze_abstention_robustness.py   # Dependence on committed votes
+│   │   ├── compare_training_seeds.py       # Do same-model seeds co-fail?
+│   │   ├── find_natural_subgroup_cases.py  # Unpoisoned subgroup signatures
+│   │   ├── analyze_natural_subgroup_stability.py  # Stability of that estimate
+│   │   ├── extract_failure_examples.py     # Qualitative consensus failures
+│   │   └── diagnose_tie_breaking.py        # Even-bank tie-handling diagnostic
+│   │
+│   ├── regimes/                            # 4. Controlled regime interventions
+│   │   ├── build_cofailure_manifest.py     # Per-item trigger annotations
+│   │   ├── run_cofailure_votes_replay.py   # Deterministic CPU replay, no GPU
+│   │   ├── run_cofailure_votes_gpu.py      # Real biased-prompt re-inference
+│   │   ├── compute_cofailure_metrics.py    # Per-item consensus / filter scores
+│   │   ├── analyze_cofailure_experiment.py # Agreement-vs-accuracy curves
+│   │   ├── plot_cofailure_figures.py       # Figures from the analysis CSVs
+│   │   ├── build_poisoned_ultrafeedback.py # Weak-dependence contamination
+│   │   ├── run_ultrafeedback_judges.py     # Content-based votes on those pairs
+│   │   ├── evaluate_poisoned_ultrafeedback.py  # Filters at matched retention
+│   │   ├── run_position_aligned_poisoning.py   # Vulnerable-subgroup regime
+│   │   └── discover_natural_mechanisms.py  # Non-position mechanisms, no inference
+│   │
+│   ├── filters/                            # 5. Aggregation rules as probes
+│   │   ├── run_corrfilter_baselines.py     # CorrFilter vs naive baselines
+│   │   ├── run_adaptive_r_experiment.py    # How R is estimated in deployment
+│   │   ├── validate_direction_randomized_r.py  # Gold-free R under randomization
+│   │   ├── run_bias_cluster_filter.py      # Support outside a vulnerable cluster
+│   │   ├── learn_bias_cluster.py           # Learn that cluster from ~100 items
+│   │   ├── run_corrfilter_plus.py          # Independence-reward variant
+│   │   └── approximate_lowrank_corrfilter.py   # Factor approximation of R
+│   │
+│   ├── frontier/                           # 6. Frontier judge banks (Sec. 5.2)
+│   │   ├── run_gemini_judges.py            # Gemini bank, dry-run by default
+│   │   ├── analyze_gemini_bank.py          # Gemini vs the open-weight bank
+│   │   ├── run_openrouter_judges.py        # GPT / Claude / Grok via OpenRouter
+│   │   ├── analyze_openrouter_pilot.py     # Multi-provider pilot analysis
+│   │   └── analyze_multiprovider_banks.py  # All banks on identical items
+│   │
+│   ├── preference_training/                # 7. Does DPO/GRPO cause it? (Sec. 5.3)
+│   │   ├── train_judge_grpo.py             # GRPO-train one judge, LoRA
+│   │   ├── train_judge_dpo.py              # DPO-train one judge, LoRA
+│   │   ├── evaluate_grpo_corrfilter.py     # Co-failure metrics, trained banks
+│   │   ├── simulate_grpo_reward_contamination.py  # Offline reward-signal pilot
+│   │   ├── run_forced_choice_banks.py      # Matched base/GRPO/DPO forced choice
+│   │   └── analyze_forced_choice_banks.py  # The matched dependence comparison
+│   │
+│   ├── routing_selector/                   # 8. Routing and selector (Sec. 5.5)
+│   │   ├── run_regime_router.py            # Classify regime, map to a filter
+│   │   ├── run_unified_router.py           # Soft, confidence-weighted routing
+│   │   ├── evaluate_routing_accuracy.py    # Routing accuracy vs ground truth
+│   │   ├── run_mixed_regime_benchmark.py   # Mixed-regime deployment pool
+│   │   ├── test_router_noninferiority.py   # Preregistered non-inferiority test
+│   │   ├── train_router_dev.py             # Small-sample dev-set router check
+│   │   ├── select_deployment_filter.py     # Strict 456-deployment selector
+│   │   └── transfer_selector_to_aggrefact.py   # Frozen transfer, 8 components
+│   │
+│   ├── cross_task_screen/                  # 9. Feasibility screen, incl. nulls
+│   │   ├── run_factuality_judges.py        # Pointwise factuality collection
+│   │   ├── report_factuality_pilot.py      # Judge-competence pilot gate
+│   │   ├── run_factuality_frontier_judges.py   # Frontier factuality bank
+│   │   ├── run_screening_votes.py          # GPU collection for the campaign
+│   │   ├── analyze_screening_campaign.py   # Routing-feasibility table
+│   │   ├── build_actionability_artifacts.py    # Figure and LaTeX fragments
+│   │   ├── run_nei_mechanism_pilot.py      # Preregistered NEI pilot
+│   │   ├── collect_bankd_votes.py          # Full bank-D collection, gated
+│   │   ├── collect_aggrefact_votes.py      # AggreFact component-level votes
+│   │   ├── run_frontier_code_pilot.py      # Pointwise code-judging pilot
+│   │   └── run_expanded_aggregation.py     # Expanded aggregation family
+│   │
+│   ├── downstream/                         # 10. Does contamination reach training?
+│   │   ├── build_filtered_dpo_data.py      # Preference files, matched retention
+│   │   ├── train_policy_dpo.py             # DPO-train a small policy
+│   │   ├── evaluate_policy.py              # Held-out reward accuracy, margins
+│   │   ├── summarize_downstream.py         # Paired-CI policy comparison
+│   │   └── integrate_reward_model_weights.py   # Filter signals as loss weights
+│   │
+│   ├── figures/                            # Paper figure and table generators
+│   │   ├── make_paper_figures.py           # Shared style plus the main figures
+│   │   ├── make_tier_figure.py             # Capability-tier block structure of R
+│   │   ├── make_selector_figure.py         # Deployment-selector summary
+│   │   ├── make_base_vs_grpo_figure.py     # Base vs GRPO dependence panels
+│   │   ├── make_training_summary_figure.py # Base to preference-trained overview
+│   │   ├── make_cross_dataset_figure.py    # RewardBench / UltraFeedback / PKU
+│   │   ├── make_taxonomy_hero.py           # Dependence-regime taxonomy diagram
+│   │   └── make_repro_tables.py            # Paper tables from dependence.csv
+│   │
+│   ├── lib/                                # Shared helpers, imported by stages
+│   │   ├── compute_dependence.py           # Canonical dependence estimator
+│   │   ├── bootstrap_ci.py                 # Bootstrap and paired-bootstrap CIs
+│   │   └── run_filters.py                  # Matched-retention filter comparison
+│   │
+│   └── pipelines/                          # Shell drivers chaining the stages
+│       ├── reproduce_all.sh                # End-to-end reproduction
+│       ├── run_bank_parallel.sh            # Parallel bank vote collection
+│       ├── run_cofailure_experiment.sh     # Co-failure stage chain
+│       └── watch_and_eval_ultrafeedback.sh # Watch-and-evaluate helper
+│
+├── experiments/
+│   └── router_upgrade/                     # Deployment-selector pool builders
+│                                           # (the only experiment package in Git;
+│                                           #  other experiment trees are outputs)
+│
+├── jobs/
+│   └── slurm/                              # Reproducible SLURM workflows
+│       ├── env.sh                          # Shared env; set SLURM_ACCOUNT here
+│       ├── setup_env.sh                    # venv, deps, model staging
+│       ├── run_all.sh                      # CPU inline plus GPU DAG submit
+│       ├── smoke_test.slurm                # Fail-fast end-to-end sanity check
+│       └── *.slurm                         # Per-stage batch jobs
+│
+└── tests/                                  # CPU unit and regression tests
 ```
 
-Every script resolves the repository root as `Path(__file__).resolve().parents[2]` and is
-run from the repository root, for example
+Scripts are grouped by pipeline stage. Directory names are not numbered; the stage table
+under [Reproducing the analyses](#reproducing-the-analyses) gives the execution order, and
+the comments above repeat it. Every script resolves the repository root as
+`Path(__file__).resolve().parents[2]` and is run from the repository root, for example
 `python scripts/dependence/compute_error_correlation.py`.
 
 Generated data, vote caches, checkpoints, figures, paper sources, and experiment outputs
@@ -206,7 +234,7 @@ plotting code under `scripts/figures`.
 Python 3.10 or newer is required.
 
 ```bash
-git clone https://github.com/eliashossain001/corrfilter.git
+git clone <repository-url>
 cd corrfilter
 python -m venv .venv
 source .venv/bin/activate
@@ -288,12 +316,12 @@ are summarized with uncertainty clustered by component.
 
 ### Full cluster workflow
 
-See [README_NEWTON.md](README_NEWTON.md):
+See [README_CLUSTER.md](README_CLUSTER.md):
 
 ```bash
-bash jobs/newton/setup_env.sh
-sbatch jobs/newton/smoke_test.slurm
-bash jobs/newton/run_all.sh
+bash jobs/slurm/setup_env.sh
+sbatch jobs/slurm/smoke_test.slurm
+bash jobs/slurm/run_all.sh
 ```
 
 ## Evaluation safeguards
@@ -333,10 +361,16 @@ ignored artifacts are absent.
 
 ## Citation
 
+This repository accompanies a paper currently under double-blind review, so author and
+affiliation details are withheld. Please cite the anonymized preprint:
+
 ```bibtex
-@article{hossain2026agreement,
-  title  = {Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus},
-  author = {Hossain, Elias},
-  year   = {2026}
+@misc{anon2026agreement,
+  title        = {Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus},
+  author       = {Anonymous},
+  year         = {2026},
+  note         = {Under review}
 }
 ```
+
+The citation will be updated with author information once review concludes.

@@ -1,7 +1,7 @@
 """GRPO judges: co-failure metrics + CorrFilter-vs-consensus at matched retention.
 
 Consumes the GRPO judge vote cache (produced by 02 on configs/grpo_judge_bank.yaml)
-and the correlation.npz produced by 03, and answers Dr. Lim's three claims with
+and the correlation.npz produced by 03, and answers the three review claims with
 REAL GRPO judge outputs:
 
   1. dependence:  rho_bar, n_eff, eigen-rank, conditional & majority co-failure.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=train_dpo_judges
 #SBATCH --partition=normal
-#SBATCH --account=nyousefi
+#SBATCH --account=CHANGE_ME   # set to your SLURM account
 #SBATCH --qos=normal
 #SBATCH --gres=gpu:nvidia_h100_pcie:1
 #SBATCH --cpus-per-task=8
@@ -11,7 +11,7 @@
 #SBATCH --output=logs/%x-%A_%a.out
 # Bucket 2 — DPO-train one judge per array task into a LoRA adapter.
 set -euo pipefail
-source "$(git rev-parse --show-toplevel 2>/dev/null || echo .)/jobs/newton/env.sh" 2>/dev/null || source jobs/newton/env.sh
+source "$(git rev-parse --show-toplevel 2>/dev/null || echo .)/jobs/slurm/env.sh" 2>/dev/null || source jobs/slurm/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 MODELS=(

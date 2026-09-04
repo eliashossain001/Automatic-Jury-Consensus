@@ -1,7 +1,7 @@
 """GRPO-train ONE pairwise-preference judge into a LoRA adapter (real RL, no simulation).
 
-Dr. Lim asks for *original* GRPO-trained LLM judges. This script takes one base
-model (already cached under /shared/models/huggingface) and fine-tunes it with
+This addresses a review request for *original* GRPO-trained LLM judges. This script takes one base
+model (already cached under $HF_HOME) and fine-tunes it with
 GRPO on a preference-label reward:
 
     reward = 1.0  if the judge's A/B verdict selects the gold (chosen) response

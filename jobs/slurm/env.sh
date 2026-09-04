@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Shared Newton environment — sourced by every job. NO hardcoded local paths:
+# Shared cluster environment — sourced by every job. NO hardcoded local paths:
 # everything derives from the repo location or is overridable via environment.
 set -euo pipefail
 
-# repo root = two levels up from this file (jobs/newton/env.sh)
+# repo root = two levels up from this file (jobs/slurm/env.sh)
 export REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 export RESULTS="${RESULTS:-$REPO/results/strengthening_phase}"
 export LOGDIR="${LOGDIR:-$REPO/logs}"
@@ -20,13 +20,13 @@ export MALLOC_ARENA_MAX="${MALLOC_ARENA_MAX:-1}"   # curb jemalloc/glibc arena t
 
 # --- SLURM defaults (override by exporting before sbatch, or via sbatch CLI flags) ---
 export SLURM_PARTITION="${SLURM_PARTITION:-normal}"
-export SLURM_ACCOUNT="${SLURM_ACCOUNT:-nyousefi}"
+export SLURM_ACCOUNT="${SLURM_ACCOUNT:-CHANGE_ME}"
 export SLURM_QOS="${SLURM_QOS:-normal}"
 export SLURM_GRES="${SLURM_GRES:-gpu:nvidia_h100_pcie:1}"
 export SLURM_TIME="${SLURM_TIME:-12:00:00}"
 
 # --- HuggingFace cache / offline ---
-# Point HF_HOME at a shared cache if one exists on Newton; else a repo-local cache.
+# Point HF_HOME at a shared cache if one exists on the cluster; else a repo-local cache.
 export HF_HOME="${HF_HOME:-$REPO/.hf_cache}"
 export TRANSFORMERS_CACHE="${TRANSFORMERS_CACHE:-$HF_HOME/hub}"
 export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"       # set 0 on a node with internet to download

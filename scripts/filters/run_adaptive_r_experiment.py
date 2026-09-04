@@ -24,7 +24,7 @@ adaptive_r_summary.md, figures/}.
 
 Usage:
     python scripts/filters/run_adaptive_r_experiment.py \
-        --project-root /home/elias/elias_projects/corrfilter \
+        --project-root /path/to/corrfilter \
         --items-file outputs/cfi/cfi_subset_items.txt
 """
 

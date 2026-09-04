@@ -1,4 +1,4 @@
-"""Bucket 2 — DPO-train ONE pairwise-preference judge into a LoRA adapter (Newton/GPU).
+"""Bucket 2 — DPO-train ONE pairwise-preference judge into a LoRA adapter (SLURM/GPU).
 
 Preference-optimization alternative to GRPO (scripts/preference_training/train_judge_grpo.py). For each calibration item we
 build a DPO pair on the SAME pairwise judging prompt used elsewhere:
@@ -9,7 +9,7 @@ per item. Saves only the LoRA adapter. bf16 by default (H100/A100); --fp16 for T
 
 Target claim: "preference optimization (not only GRPO) can increase inter-judge dependence."
 
-Usage (Newton):
+Usage (the cluster):
   python scripts/preference_training/train_judge_dpo.py --model Qwen/Qwen2.5-7B-Instruct \
       --base-id qwen-2.5-7b --family qwen --scale 7B --seed 0 \
       --output results/strengthening_phase/dpo_judges/adapters/qwen-2.5-7b_seed0 --bf16

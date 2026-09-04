@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-"""Explicit routing-accuracy evaluation for the regime routers (Prof. Lim: "How
-accurate is the routing?").
+"""Explicit routing-accuracy evaluation for the regime routers (review question: how
+accurate is the routing?).
 
 Ground truth: the regime label of each deployment instance is assigned BY
 CONSTRUCTION from the synthetic generator that produced it (position-aligned

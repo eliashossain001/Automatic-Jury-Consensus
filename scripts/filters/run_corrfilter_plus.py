@@ -1,6 +1,6 @@
 """CorrFilter+ (Balanced CorrFilter) -- label-quality analysis only (NO training).
 
-Motivation (Dr. Lim): CorrFilter's alpha penalises correlated agreement even when the
+Motivation: CorrFilter's alpha penalises correlated agreement even when the
 correlated judges are correct. CorrFilter+ keeps the independence reward of alpha but
 ADDS an explicit reward for independent corroboration, so correlated agreement that is
 *also* backed by less-correlated judges is not over-discounted.

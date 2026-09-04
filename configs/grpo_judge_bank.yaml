@@ -1,4 +1,4 @@
-# GRPO judge bank — REAL GRPO-trained judges (Dr. Lim request), not simulation.
+# GRPO judge bank — REAL GRPO-trained judges (review request), not simulation.
 #
 # Three base models from the paper's bank, each GRPO-trained (scripts/preference_training/train_judge_grpo.py) into a
 # LoRA adapter on the pairwise preference-label reward, then crossed with the two
@@ -6,7 +6,7 @@
 # bank's structure (model-family × prompt-style) so base-vs-GRPO dependence is a
 # clean, matched contrast.
 #
-# Base weights are the shared cache under /shared/models/huggingface; only the
+# Base weights are the shared cache under $HF_HOME; only the
 # per-judge LoRA adapter is checkpointed (disk-frugal). Trained one model per GPU.
 #
 # Adapters are produced by:

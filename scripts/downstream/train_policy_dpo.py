@@ -1,10 +1,10 @@
-"""Bucket 3 — DPO-train a small policy model on a filtered preference file (Newton/GPU).
+"""Bucket 3 — DPO-train a small policy model on a filtered preference file (SLURM/GPU).
 
 Reads a {prompt,chosen,rejected} jsonl produced by downstream/build_filtered_dpo_data.py and
 DPO-trains a small policy with LoRA. bf16 by default (H100/A100); pass --fp16 for
 Turing (TITAN). Saves only the LoRA adapter + a train_meta.json. Deterministic seed.
 
-Usage (Newton):
+Usage (the cluster):
   python scripts/downstream/train_policy_dpo.py --data <dpo_majority.jsonl> \
       --base-model Qwen/Qwen2.5-1.5B-Instruct --output <out/models/majority> \
       --epochs 2 --beta 0.1 --lr 5e-6 --seed 20260707 --bf16

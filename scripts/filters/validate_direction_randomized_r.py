@@ -30,7 +30,7 @@ direction_randomized_summary.md, figures/}.
 
 Usage:
     python scripts/filters/validate_direction_randomized_r.py \
-        --project-root /home/elias/elias_projects/corrfilter \
+        --project-root /path/to/corrfilter \
         --items-file outputs/cfi/cfi_subset_items.txt
 """
 

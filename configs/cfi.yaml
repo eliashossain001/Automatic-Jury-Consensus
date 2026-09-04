@@ -38,7 +38,7 @@ triggers:
 
 # Voting mode for the experiment.
 #   replay  → deterministic CPU simulation from cached H1 votes (default).
-#   real    → re-run HFJudge on Newton with the biased prompt injected.
+#   real    → re-run HFJudge on the cluster with the biased prompt injected.
 mode: replay
 
 # Real-mode runtime (ignored when mode == 'replay'). Mirrors the H1 bank

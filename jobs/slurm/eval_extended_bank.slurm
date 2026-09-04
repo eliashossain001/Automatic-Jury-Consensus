@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=eval_extended_bank
 #SBATCH --partition=normal
-#SBATCH --account=nyousefi
+#SBATCH --account=CHANGE_ME   # set to your SLURM account
 #SBATCH --qos=normal
 #SBATCH --gres=gpu:nvidia_h100_pcie:1
 #SBATCH --cpus-per-task=8
@@ -10,7 +10,7 @@
 #SBATCH --output=logs/%x-%j.out
 # Bucket 4 — inference over the extended (up to 20-judge) bank, then n_eff saturation.
 set -euo pipefail
-source jobs/newton/env.sh
+source jobs/slurm/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 echo "### [1/2] extended-bank inference (cached votes are skipped automatically) ###"

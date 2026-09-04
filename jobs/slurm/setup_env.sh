@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time environment setup — run on a Newton LOGIN node (has internet).
+# One-time environment setup — run on a the cluster LOGIN node (has internet).
 # Creates a venv, installs pinned deps, installs the corrfilter package, verifies imports.
 # Idempotent. Override PY_BUILD/torch index if your CUDA differs.
 set -euo pipefail
@@ -30,7 +30,7 @@ echo "### [setup] staging models (choose ONE path) ###"
 cat <<'NOTE'
 Models are NOT auto-downloaded here. Pick one:
   (a) rsync from the shared box (fastest if reachable):
-      rsync -aP <you>@<sharedhost>:/shared/models/huggingface/hub/  "$HF_HOME/hub/"
+      rsync -aP <you>@<sharedhost>:$HF_HOME/hub/  "$HF_HOME/hub/"
   (b) download on this login node with your token (compute nodes may be offline):
       export HF_HUB_OFFLINE=0 HF_TOKEN=<your_token>
       python - <<'PY'
@@ -59,4 +59,4 @@ echo "SETUP_DONE — deps installed. Do NOT import torch on the login node (it w
 echo "Verify the runtime on a COMPUTE node:"
 echo "  srun -p ${SLURM_PARTITION} -A ${SLURM_ACCOUNT} -q ${SLURM_QOS} --gres=${SLURM_GRES} --mem=32G -t 15 --pty \\"
 echo "    bash -lc 'cd $REPO && source .venv/bin/activate && python -c \"import torch,trl,peft; print(torch.cuda.is_available())\"'"
-echo "Or just run the real check:  sbatch jobs/newton/smoke_test.slurm"
+echo "Or just run the real check:  sbatch jobs/slurm/smoke_test.slurm"

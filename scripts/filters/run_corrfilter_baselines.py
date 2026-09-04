@@ -19,7 +19,7 @@ Outputs (under outputs/corrfilter/):
   filtering_comparison.csv, corrfilter_report.md
 
 Usage:
-    python scripts/filters/run_corrfilter_baselines.py --project-root /home/elias/elias_projects/corrfilter
+    python scripts/filters/run_corrfilter_baselines.py --project-root /path/to/corrfilter
     python scripts/filters/run_corrfilter_baselines.py --mechanism position_bias_stress_test --target-retention 0.8
 """
 

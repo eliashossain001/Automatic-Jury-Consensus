@@ -1,4 +1,4 @@
-"""Bucket 3 — evaluate a DPO-trained policy on held-out preference pairs (Newton/GPU).
+"""Bucket 3 — evaluate a DPO-trained policy on held-out preference pairs (SLURM/GPU).
 
 Reward accuracy = fraction of held-out (prompt, chosen, rejected) pairs where the
 policy assigns higher length-normalized log-probability to `chosen`. Also reports the
@@ -6,7 +6,7 @@ mean reward margin. Works on RewardBench (default) or any jsonl/csv/parquet mani
 with prompt/chosen/rejected (or response_a/response_b/true_label). Emits a per-item
 CSV so downstream can compute paired bootstrap CIs across the two policies.
 
-Usage (Newton):
+Usage (the cluster):
   python scripts/downstream/evaluate_policy.py --base-model Qwen/Qwen2.5-1.5B-Instruct \
       --adapter <out/models/corrfilter> --manifest <rewardbench_eval.parquet> \
       --n 400 --out <out/results/eval_corrfilter.csv> --tag corrfilter --bf16

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=downstream_summary
 #SBATCH --partition=normal
-#SBATCH --account=nyousefi
+#SBATCH --account=CHANGE_ME   # set to your SLURM account
 #SBATCH --qos=normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
@@ -9,7 +9,7 @@
 #SBATCH --output=logs/%x-%j.out
 # Bucket 3 — combine the two policy evals into the reviewer table (paired CI). CPU-only.
 set -euo pipefail
-source jobs/newton/env.sh
+source jobs/slurm/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 RD="$RESULTS/downstream/results"; mkdir -p "$RD"
 $PY scripts/downstream/summarize_downstream.py \
