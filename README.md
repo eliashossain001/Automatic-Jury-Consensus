@@ -1,183 +1,214 @@
 # CorrFilter
 
-**Consensus Is Not Reliability: A Taxonomy of Dependence Failures in LLM Judge Banks**
+Code for **Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus**.
 
-Code for measuring and mitigating *structured co-failure* in LLM judge banks used for
-alignment-data filtering.
+This repository measures dependent errors in LLM judge banks and studies their
+consequences for consensus filtering and evaluation. The central contribution is a
+measurement diagnosis and an operational evaluation protocol—not a claim that one new
+aggregation rule universally replaces majority voting.
 
-LLM judges increasingly govern alignment pipelines through **k-of-n consensus** — a
-preference pair is retained when enough judges agree. This assumes judges fail
-*independently*. They don't. This repo provides the tooling to (1) **measure** that
-dependence, (2) **classify** which of three dependence regimes a judge bank is in, and
-(3) **mitigate** it with regime-appropriate filters.
+## Main findings
 
-## Key findings
+- **Nominal votes overstate independent evidence.** In the primary ten-judge open-weight
+  bank, mean error correlation is $\bar\rho=0.206$, corresponding to an effective ensemble
+  size of only $n_{\mathrm{eff}}=3.51$.
+- **Naively pooling votes changes conclusions.** On 100-item Focus panels, a pooled-vote
+  test reports a significant winner unsupported by item-level inference in up to 28% of
+  evaluations.
+- **Capability does not guarantee diversity.** GPT, Claude, and Grok judges achieve
+  91–93% individual accuracy on the shared RewardBench subset, while residual errors have
+  $\bar\rho=0.56$ and co-occur at 7.7 times the independence expectation.
+- **Preference optimization does not reproduce the frontier pattern.** In the matched
+  forced-choice experiment, GRPO reduces mean error correlation from 0.174 to 0.153;
+  DPO gives 0.168 and is statistically indistinguishable from the untrained bank.
+- **Dependence structure matters.** Controlled global co-failure and vulnerable-subgroup
+  interventions produce opposite diagnostic signatures and favor different filters.
+  These experiments identify mechanisms; they do not estimate natural prevalence.
+- **The measurement is robust to random label error.** Across 40 seeds, randomly flipping
+  1–10% of calibration labels leaves the conclusion intact: $\bar\rho=0.208$–0.226 and
+  $n_{\mathrm{eff}}=3.48$–3.30, versus 0.206 and 3.51 without flips.
+- **The deployment selector is a bounded safeguard.** Under the strict disjoint-panel
+  protocol its gain over the best fixed rule is +0.12 precision points with a 95% interval
+  of [-0.04, +0.30]. When frozen and transferred to eight natural LLM-AggreFact
+  components, it selects plain majority on all 160 splits, avoids transferring a harmful
+  Bias-Cluster rule, and recovers 85.5% of per-deployment oracle headroom. It does not beat
+  majority or the per-deployment oracle.
+- **Retained contamination affects downstream margins.** DPO reward margins decline from
+  20% retained contamination onward; downstream preference-accuracy changes at the tested
+  scale remain within uncertainty.
 
-- **Strong, structural dependence.** A ten-judge bank (5 open-weight models × 2 prompt
-  styles) shows mean pairwise error correlation **ρ̄ = 0.21**, collapsing 10 nominal judges
-  to an effective ensemble of only **n_eff ≈ 3.5** — a hard ceiling of `1/ρ̄ ≈ 4.9`. Roughly
-  **27%** of items have the majority jointly wrong.
-- **Replicates across three preference datasets** (same bank, same estimators), worst on
-  safety data:
+## Recommended evaluation protocol
 
-  | Dataset | ρ̄ | n_eff (of 10) | conditional co-failure |
-  |---|---|---|---|
-  | RewardBench v2 | 0.21 | 3.5 | 0.50 |
-  | UltraFeedback | 0.22 | 3.4 | 0.51 |
-  | **PKU-SafeRLHF** (human safety labels) | **0.27** | **2.9** | **0.53** |
-
-- **Diversity doesn't fix it.** Prompt-style diversity gives zero decorrelation, model-family
-  diversity is inconsistent, and all judges show position bias (H1 rejected).
-- **Scaling the bank doesn't recover independence.** Growing 4→16 judges (5 families,
-  1.5B–14B), n_eff reaches only **4.7 at n=16 (~29% of nominal, down from 71% at n=4)** —
-  more coverage, not more independence.
-- **Preference optimization amplifies it.** Training the same judges **raises** ρ̄ and shrinks
-  n_eff on a matched 6-judge bank — DPO more than GRPO — yet the correlation-aware
-  **CorrFilter** still cuts false-retention below majority/supermajority consensus at matched
-  60% retention:
-
-  | Training | ρ̄ | n_eff | CorrFilter FRR reduction @0.60 |
-  |---|---|---|---|
-  | Base (untrained) | 0.178 | 3.17 | — |
-  | GRPO-trained | 0.235 | 2.76 | 4.2 pts [2.8, 5.6] |
-  | DPO-trained | 0.326 | 2.28 | 6.0 pts [4.4, 7.7] |
-
-- **Three dependence regimes**, each needing a different mitigation:
-  - **Mild dependence** — consensus stays approximately reliable.
-  - **Global co-failure** — shared blind spots → confident agreement on wrong labels; a
-    *correlation-aware filter* cuts false retention.
-  - **Vulnerable subgroup** — a biased subset drives wrong majorities while making the
-    ensemble look *less* correlated; a *bias-cluster filter* improves precision.
-  Vulnerable subgroups occur **naturally**, not only under synthetic poisoning: **150/319**
-  consensus-wrong items carry a natural subgroup signature, and leave-cluster-out flips the
-  majority to correct on 47% of wrong items.
-- **Robust to gold-label noise.** Flipping 1/3/5/10% of gold labels (40 seeds) barely moves
-  ρ̄ (0.21 → 0.23); the high-consensus subset is *more* dependent (ρ̄ = 0.34), not a
-  label-noise artifact.
-- **Cheap to deploy.** R is estimated once per bank (scoring is `O(|S|²)`, no per-item
-  training, no matrix inversion); a **low-rank (rank-2/3) approximation of R recovers — even
-  denoises — the full-R benefit**.
-
-### Reported honestly (where mitigations do *not* yet win)
-
-- **Regime router:** a supervised dev-set router matches ~78% regime accuracy but does not
-  beat the best single filter (gain −0.6 pts, 95% CI [−1.5, +0.1] includes 0). It's a
-  diagnostic, not a universal policy.
-- **Downstream DPO:** CorrFilter cut training contamination 24.9% → 20.5%, but a 1.5B DPO
-  policy's reward accuracy was unchanged within uncertainty — **no downstream win claimed**;
-  contamination-scaling is future work.
-- **No universal filter:** different regimes need different filters; regime identification is
-  the prerequisite.
+1. Label a representative calibration panel (approximately 100 items in our experiments).
+2. Report each judge's accuracy, mean error correlation, and effective ensemble size.
+3. Treat the item—not each judge vote—as the unit of statistical inference.
+4. Inspect eigenstructure, subgroup disagreement, and leave-cluster-out flips in addition
+   to mean correlation.
+5. Compare any dependence-aware rule with majority at matched retention. If there is no
+   measurable headroom, keep majority.
+6. Recalibrate after changing the task or judge bank. Treat learned selection as protection
+   against negative transfer, not proof that it improves on majority.
 
 ## Repository layout
 
-```
+```text
 corrfilter/
-├── src/corrfilter/            Python package
-│   ├── data/                  RewardBench v2 / UltraFeedback calibration loaders
-│   ├── judges/                Judge abstraction: HF local-weights + API judges, prompts, registry
-│   ├── voting/                Calibration + filtering runners with on-disk vote cache
-│   ├── correlation/           Error-correlation R, n_eff, eigenspectrum, clustering
-│   ├── analysis/              Hypothesis tests, agreement, eigen/failure-mode decomposition
-│   ├── cfi/                   Correlated-Failure Index: banks, bias clusters, adaptive-r,
-│   │                          consensus, corrfilter score, triggers, bootstrap, metrics
-│   ├── viz/                   Heatmaps, dendrograms, eigenspectrum, n_eff-collapse figures
-│   └── filtering.py           Core filtering entry points
-├── configs/                   YAML judge-bank and calibration-set definitions
-├── scripts/                   Numbered driver scripts (01_… → 32_…) + analysis/ helpers
-├── jobs/newton/               SLURM job scripts for the strengthening-phase cluster run
-├── tests/                     Unit tests (pytest)
-├── pyproject.toml             Package + dev tooling (ruff, pytest)
-├── README.md
-└── README_NEWTON.md           Cluster (SLURM) runbook for the full strengthening phase
+├── src/corrfilter/
+│   ├── analysis/       Agreement, hypothesis tests, and failure decomposition
+│   ├── cfi/            Consensus, CorrFilter, adaptive-R, clusters, metrics
+│   ├── correlation/    Error correlation, shrinkage, eigenstructure, n_eff
+│   ├── data/           Preference and generic binary-task adapters
+│   ├── judges/         HF, Gemini, OpenRouter, and forced-choice judges
+│   ├── voting/         Cached vote collection
+│   ├── evaluation.py   Tie-safe, retention-matched evaluation primitives
+│   ├── filtering.py    Core filtering entry points
+│   └── routing.py      Shared deployment-routing primitives
+├── configs/            Pinned judge-bank and experiment configuration
+├── scripts/            Numbered experiment and analysis drivers
+├── experiments/router_upgrade/  Deployment-selector experiment source
+├── jobs/newton/        Reproducible SLURM workflows
+├── tests/              CPU unit and regression tests
+├── pyproject.toml
+└── README_NEWTON.md    Cluster setup and execution notes
 ```
 
-> **Note on data:** experiment outputs, model artifacts, vote caches, figures, and the
-> paper source are intentionally **not** tracked in git (see `.gitignore`) — they are large
-> and regenerable. Everything below reproduces them from scratch.
+Generated data, vote caches, checkpoints, figures, paper sources, and experiment outputs
+are intentionally excluded from Git; the small router-upgrade source package is retained.
+Root-level ignore rules do not hide package modules
+such as `src/corrfilter/data` or plotting code under `scripts/figures`.
 
 ## Installation
 
-Requires Python ≥ 3.10.
+Python 3.10 or newer is required.
 
 ```bash
 git clone https://github.com/eliashossain001/corrfilter.git
 cd corrfilter
-python -m venv .venv && source .venv/bin/activate
-pip install -e .            # add ".[dev]" for pytest + ruff
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+# Optional: legacy SDK-backed judges and preference-training scripts
+pip install -e ".[api,training]"
 ```
 
-Judges load open-weight models via `transformers`. Set a Hugging Face token (for gated
-models) in a `.env` file at the repo root — it is gitignored and never committed:
+Set provider credentials only when collecting new API votes. Never commit `.env`:
 
 ```bash
-echo "HF_TOKEN=hf_xxx" > .env
+export HF_TOKEN=...
+export GEMINI_API_KEY=...
+export OPENROUTER_API_KEY=...
 ```
 
-## Quick start — H1 (measuring dependence)
+All API runners default to dry-run or require an explicit live flag; cached-vote analyses
+make no paid calls.
+
+## Reproducing the analyses
+
+The numbered scripts follow the experiment chronology:
+
+| Scripts | Purpose |
+|---|---|
+| `01`–`04` | Build RewardBench calibration data and measure dependence |
+| `05`–`09` | Controlled co-failure collection and baseline CorrFilter analysis |
+| `10`–`19` | Adaptive correlation, poisoning, subgroup filters, and early routing |
+| `20`–`27` | Robustness, confidence intervals, replication, and downstream simulations |
+| `28`–`32` | Preference-trained judges and seed/abstention checks |
+| `33`–`42` | Frontier banks, non-error dependence, mixed deployments, significance flips, and natural subgroup stability |
+| `43`–`52` | Preregistered factuality/code actionability screen, including reported null configurations |
+| `53`–`58` | Forced-choice controls, non-inferiority, expanded aggregation, and natural-mechanism analysis |
+| `59`–`61` | Strict deployment selector, frozen AggreFact transfer, and final selector figure |
+
+The null and pilot scripts in the cross-task screen are retained because they support the
+paper's stated boundary conditions. The superseded selector plotter and internal slide
+generators have been removed.
+
+### Core measurement
 
 ```bash
-python scripts/01_build_calibration_set.py                        # RewardBench v2 calibration set
-python scripts/02_run_judges.py --config configs/judge_bank.yaml  # run the 10-judge bank (cached)
-python scripts/03_compute_correlation.py                          # ρ̄, n_eff, eigenspectrum
-python scripts/04_h1_analysis.py                                  # hypothesis tests + figures
+python scripts/01_build_calibration_set.py
+python scripts/02_run_judges.py --config configs/judge_bank.yaml
+python scripts/03_compute_correlation.py
+python scripts/04_h1_analysis.py
+python scripts/gold_sensitivity.py
+python scripts/41_significance_flip.py
 ```
 
-Outputs land in `experiments/h1_measurement/`; the writeup is in `reports/h1_measurement.md`.
-
-## Reproducibility
-
-The `scripts/` directory is an **ordered pipeline** — file names are numbered in dependency
-order. Broadly:
-
-| Scripts | Stage |
-|---------|-------|
-| `01`–`04` | H1: build calibration set, run judges, compute correlation, analyze dependence |
-| `05`–`09` | CFI: manifest, votes, correlated-failure analysis, CorrFilter run |
-| `10`–`19` | Adaptive-r, poisoned-UltraFeedback attacks, position poisoning, cluster/bias filters, regime router |
-| `20`–`27` | Robustness, confidence intervals, mainstream-alignment integration, dependence replication, simulations |
-| `28`–`32` | GRPO/DPO-trained judges, base-vs-trained comparison, abstention robustness, seed contrast |
-
-Helper analysis scripts live in `scripts/analysis/` (bootstrap CIs, dependence tables,
-repro tables). Judge banks and calibration sets are fully specified in `configs/*.yaml`, so
-a run is reproducible from `(config, script)` alone. Vote results are cached on disk, so
-re-running a stage reuses prior judge calls instead of recomputing them.
-
-### Full cluster run (strengthening phase)
-
-The complete set of GPU experiments (DPO-trained judges, downstream DPO policies, extended
-15–20 judge bank) is orchestrated for SLURM. See **[README_NEWTON.md](README_NEWTON.md)**:
+### Frontier and preference-training analyses
 
 ```bash
-bash jobs/newton/setup_env.sh     # venv + deps + stage models
+python scripts/34_gemini_bank_analysis.py
+python scripts/40_multiprovider_full_analysis.py
+python scripts/53_forced_choice_bank.py
+python scripts/54_abstention_control_analysis.py
+```
+
+These commands consume cached votes unless their corresponding collection runner is
+invoked explicitly.
+
+### Deployment selector and natural transfer
+
+```bash
+python scripts/59_deployment_filter_selector.py
+python scripts/60_external_natural_selector.py
+python scripts/61_make_selector_figure.py
+```
+
+Script 59 reconstructs 456 preference deployments with 100 trusted calibration items and
+200 disjoint held-out items. Script 60 fits the selector on preference deployments and
+freezes it before evaluation on eight LLM-AggreFact components. Repeated external splits
+are summarized with uncertainty clustered by component.
+
+### Full cluster workflow
+
+See [README_NEWTON.md](README_NEWTON.md):
+
+```bash
+bash jobs/newton/setup_env.sh
 sbatch jobs/newton/smoke_test.slurm
-bash jobs/newton/run_all.sh       # CPU stages inline + submit GPU DAG (resumable)
+bash jobs/newton/run_all.sh
 ```
 
-Each stage writes a `manifest.json` recording git commit, model IDs, dataset hashes, and
-seeds for provenance.
+## Evaluation safeguards
 
-## Tests
+`src/corrfilter/evaluation.py` is the single source of truth for scored consensus:
+
+- even-bank ties abstain when evaluated against gold;
+- fixed tie breaking with constant gold is rejected because it rewards ties by
+  construction;
+- matched retention is denominated over the evaluable pool;
+- non-evaluable items cannot consume top-k retention slots.
+
+Stable BLAKE2b position assignment replaces Python's process-randomized `hash()`. The
+regression tests cover both corrections.
+
+## Tests and static checks
 
 ```bash
-pytest            # or: pip install -e ".[dev]" && pytest
+pytest -q
+ruff check src scripts experiments/router_upgrade tests
+python -m compileall -q src scripts experiments/router_upgrade tests
 ```
 
-Covers correlation estimation, effective sample size, filtering, consensus, adaptive-r,
-CFI banks/triggers/retention, and prompt handling.
+Tests cover correlation estimation, effective size, filtering, consensus, tie handling,
+matched retention, judge adapters, stable position assignment, generic factuality tasks,
+and deployment routing. Tests that require generated experiment pools skip when those
+ignored artifacts are absent.
+
+## Reproducibility and artifacts
+
+- Seeds and model identifiers are pinned in scripts and YAML configuration.
+- Vote caches are resumable and separate by logical judge.
+- API adapters record abstentions, failures, token use, and model/provider responses.
+- Large artifacts remain local under `data/`, `experiments/`, `results/`, and `outputs/`.
+- Do not interpret repeated splits over one dataset component as independent deployments;
+  external selector uncertainty is clustered over the eight components.
 
 ## Citation
 
-If you use this code, please cite:
-
 ```bibtex
-@article{hossain2026consensus,
-  title   = {Consensus Is Not Reliability: A Taxonomy of Dependence Failures in LLM Judge Banks},
-  author  = {Hossain, Elias},
-  year    = {2026}
+@article{hossain2026agreement,
+  title  = {Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus},
+  author = {Hossain, Elias},
+  year   = {2026}
 }
 ```
-
-## License
-
-See repository for license terms.

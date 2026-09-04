@@ -131,8 +131,9 @@ def main():
              r"Prompt (truncated) & subset & consensus & $\alpha_{\mathrm{subset}}$ & CorrFilter & Failure type \\",
              r"\midrule"]
     for r in recs:
+        prompt = r["prompt"][:60].replace("&", r"\&")
         lines.append(
-            f"{r['prompt'][:60].replace('&','\\&')}\\ldots & {r['subset']} & "
+            f"{prompt}\\ldots & {r['subset']} & "
             f"{r['consensus_level']:.2f} (wrong) & {r['corrfilter_alpha_subset']} & "
             f"{r['corrfilter_status']} & {r['failure_type'][:60]} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]

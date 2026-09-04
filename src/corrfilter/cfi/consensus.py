@@ -6,10 +6,23 @@ Definitions match the proposal:
   fraction of non-abstaining judges that voted 1 on the item. It lives in
   ``[0.5, 1.0]`` and is the natural x-axis for the "consensus vs accuracy"
   curve.
-* ``majority_consensus`` returns the per-item argmax of ``(p0, p1)`` with a
-  deterministic tie-break (defaults to 1 because the gold label is 1 in our
-  manifest, which keeps tie items in the "predicted positive" pool the same
-  way as a deterministic tie-break would).
+* ``majority_consensus`` returns the per-item argmax of ``(p0, p1)``. Ties are
+  resolved by ``tie_policy``:
+
+  - ``"abstain"`` (recommended for any evaluation against gold): a split bank
+    carries no majority, so the item is ABSTAIN and is excluded from the
+    evaluable pool.
+  - ``"fixed"``: ties take the value of ``tie_break``. Retained for the
+    poisoning experiments, where gold is not constant and both the treatment
+    and the baseline arm share the same tie-broken label array.
+
+  .. warning::
+     ``tie_policy="fixed"`` MUST NOT be scored against a constant gold vector.
+     With ``tie_break=1`` and ``gold == 1`` everywhere, every tied item is
+     correct by construction, so any filter is rewarded for retaining the items
+     on which the bank is maximally uncertain. This produced a 2.7x inflation of
+     the base-bank CorrFilter gain; see ``outputs/dpo_judges/D5_RESOLUTION.md``.
+     ``corrfilter.evaluation.evaluable_and_correct`` enforces this.
 * ``supermajority_consensus`` only predicts when ``consensus_level >=
   threshold``; otherwise it abstains (encoded as ``-1``).
 """
@@ -49,13 +62,22 @@ def vote_fraction(V: np.ndarray, M: np.ndarray) -> np.ndarray:
 
 
 def majority_consensus(
-    V: np.ndarray, M: np.ndarray, tie_break: int = 1
+    V: np.ndarray, M: np.ndarray, tie_break: int = 1, tie_policy: str = "fixed"
 ) -> np.ndarray:
-    """Per-item majority prediction, defaulting to ``tie_break`` on ties."""
+    """Per-item majority prediction.
+
+    ``tie_policy="fixed"`` (default, legacy) resolves ties to ``tie_break``.
+    ``tie_policy="abstain"`` returns ABSTAIN on ties, which is the correct
+    behaviour whenever the output is scored against gold labels. See the module
+    docstring for why the two must not be confused.
+    """
     if tie_break not in (0, 1):
         raise ValueError(f"tie_break must be 0 or 1; got {tie_break}")
+    if tie_policy not in ("fixed", "abstain"):
+        raise ValueError(f"tie_policy must be 'fixed' or 'abstain'; got {tie_policy!r}")
     p1 = vote_fraction(V, M)
-    pred = np.where(p1 > 0.5, 1, np.where(p1 < 0.5, 0, tie_break)).astype(np.int8)
+    tie_value = tie_break if tie_policy == "fixed" else ABSTAIN
+    pred = np.where(p1 > 0.5, 1, np.where(p1 < 0.5, 0, tie_value)).astype(np.int8)
     counts = M.astype(bool).sum(axis=1)
     pred = np.where(counts > 0, pred, ABSTAIN).astype(np.int8)
     return pred

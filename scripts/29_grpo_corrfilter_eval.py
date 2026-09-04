@@ -46,6 +46,7 @@ from corrfilter.correlation.effective_size import (  # noqa: E402
     mean_off_diagonal,
 )
 from corrfilter.data import load_calibration_set  # noqa: E402
+from corrfilter.evaluation import evaluable_and_correct, matched_k  # noqa: E402
 from corrfilter.filtering import inverse_error_weights  # noqa: E402
 from corrfilter.judges import load_bank_config  # noqa: E402
 from corrfilter.voting import VoteCache, load_vote_matrix  # noqa: E402
@@ -172,11 +173,11 @@ def main() -> None:
     }
 
     # ---- consensus accuracy (claim 2) ----
-    maj = majority_consensus(V, M)
+    # P0-0 corrected evaluation: ties abstain (gold is constant here), retention is
+    # denominated on the evaluable pool. See src/corrfilter/evaluation.py.
+    maj, labellable, correct = evaluable_and_correct(V, M, gold, tie_policy="abstain")
     p1 = vote_fraction(V, M)
     level = consensus_level(V, M)
-    labellable = maj != ABSTAIN
-    correct = labellable & (maj == gold)
     n = len(items)
     supermaj_keep = labellable & (level >= 0.75)
     consensus_stats = {
@@ -189,7 +190,7 @@ def main() -> None:
 
     # ---- ranking scores ----
     cf = corrfilter_score(V, M, R, maj)
-    score_corrfilter = cf.score                       # alpha_subset
+    score_corrfilter = np.where(labellable, cf.score, -np.inf)   # alpha_subset
     score_consensus = np.where(labellable, level, -np.inf)
     w = inverse_error_weights(V, M, gold)
     M_b = M.astype(bool)
@@ -209,14 +210,14 @@ def main() -> None:
     grid = [round(x, 2) for x in np.arange(0.50, 0.96, 0.05)]
     curve_rows = []
     for r in grid:
-        k = int(round(r * n))
+        k = matched_k(r, labellable)
         row = {"target_retention": r, "n_keep": k}
         for name, sc in methods.items():
             keep = top_k_keep(sc, k)
             prec, frr, nk = _precision_frr(keep, correct, labellable)
             row[f"precision_{name}"] = round(prec, 4) if not np.isnan(prec) else np.nan
             row[f"frr_{name}"] = round(frr, 4) if not np.isnan(frr) else np.nan
-            row[f"actual_retention_{name}"] = round(nk / n, 4)
+            row[f"actual_retention_{name}"] = round(nk / max(int(labellable.sum()), 1), 4)
         curve_rows.append(row)
 
     import pandas as pd
@@ -226,7 +227,7 @@ def main() -> None:
     match_points = sorted({0.6, 0.7, 0.8, consensus_stats["supermajority75_retention"]})
     table = []
     for r in match_points:
-        k = int(round(r * n))
+        k = matched_k(r, labellable)
         for name, sc in methods.items():
             keep = top_k_keep(sc, k)
             prec, frr, nk = _precision_frr(keep, correct, labellable)

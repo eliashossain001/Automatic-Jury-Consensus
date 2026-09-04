@@ -25,7 +25,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from corrfilter.cfi.consensus import ABSTAIN, consensus_level, majority_consensus  # noqa: E402
+from corrfilter.cfi.consensus import consensus_level  # noqa: E402
+from corrfilter.evaluation import evaluable_and_correct, matched_k  # noqa: E402
 from corrfilter.cfi.corrfilter_score import corrfilter_score  # noqa: E402
 from corrfilter.filtering import inverse_error_weights  # noqa: E402
 
@@ -51,12 +52,13 @@ def _topk(score, k, n):
     return keep
 
 
-def filter_table(V, M, R, gold, label, retentions=(0.5, 0.6, 0.7, 0.8)):
+def filter_table(V, M, R, gold, label, retentions=(0.5, 0.6, 0.7, 0.8),
+                 tie_policy="abstain", retention_mode="evaluable"):
+    """Retention-matched filter comparison. Corrected by P0-0: ties abstain and retention
+    is denominated on the evaluable pool (see corrfilter.evaluation)."""
     n = V.shape[0]
-    maj = majority_consensus(V, M)
+    maj, labellable, correct = evaluable_and_correct(V, M, gold, tie_policy=tie_policy)
     level = consensus_level(V, M)
-    labellable = maj != ABSTAIN
-    correct = labellable & (maj == gold)
     w = inverse_error_weights(V, M, gold)
     M_b = M.astype(bool)
     wsum = (w[None, :] * M_b).sum(1)
@@ -64,17 +66,18 @@ def filter_table(V, M, R, gold, label, retentions=(0.5, 0.6, 0.7, 0.8)):
         wp1 = np.where(wsum > 0, (V * (w[None, :] * M_b)).sum(1) / np.maximum(wsum, 1e-12), 0.5)
     scores = {
         "consensus": np.where(labellable, level, -np.inf),
-        "corrfilter_alpha_subset": corrfilter_score(V, M, R, maj).score,
+        "corrfilter_alpha_subset": np.where(labellable, corrfilter_score(V, M, R, maj).score, -np.inf),
         "independent_weighted": np.where(labellable, np.abs(wp1 - 0.5), -np.inf),
     }
     rows = []
     for r in retentions:
-        k = int(round(r * n))
+        k = matched_k(r, labellable, retention_mode=retention_mode)
         for name, sc in scores.items():
             keep = _topk(sc, k, n)
             prec, frr, nk = _prec_frr(keep, correct, labellable)
             rows.append({
                 "label": label, "method": name, "matched_retention": r, "n_keep": nk,
+                "n_evaluable": int(labellable.sum()),
                 "precision": round(prec, 4) if not np.isnan(prec) else np.nan,
                 "false_retention": round(frr, 4) if not np.isnan(frr) else np.nan,
             })
@@ -85,7 +88,9 @@ def filter_table(V, M, R, gold, label, retentions=(0.5, 0.6, 0.7, 0.8)):
     ]:
         prec, frr, nk = _prec_frr(keep, correct, labellable)
         rows.append({
-            "label": label, "method": name, "matched_retention": round(nk / n, 4), "n_keep": nk,
+            "label": label, "method": name,
+            "matched_retention": round(nk / max(int(labellable.sum()), 1), 4), "n_keep": nk,
+            "n_evaluable": int(labellable.sum()),
             "precision": round(prec, 4) if not np.isnan(prec) else np.nan,
             "false_retention": round(frr, 4) if not np.isnan(frr) else np.nan,
         })

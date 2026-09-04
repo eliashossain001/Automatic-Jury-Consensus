@@ -1,0 +1,80 @@
+# OpenRouter multi-provider frontier bank (OpenAI / Anthropic / xAI).
+#
+# Model IDs and prices are pinned to the paper run. Verify provider availability
+# and current pricing before starting a new collection. The smoke bank is used
+# only to validate request/response plumbing without paid inference.
+
+provider: openrouter
+api_key_env: OPEN_ROUTER_API_KEY
+
+prompt_style: pairwise
+
+generation:
+  temperature: 0.0            # applied only where the model supports it
+  max_output_tokens: 2048     # headroom: reasoning tokens count against this
+
+runtime:
+  position_seed: 20260601     # identical protocol to open-weight + Gemini banks
+  shuffle_position: true
+  workers: 6
+  max_retries: 5
+  backoff_base_s: 2.0
+  backoff_max_s: 60.0
+  request_timeout_s: 180
+  checkpoint_every: 25
+
+bank:
+  - id: gpt-5.6-sol
+    model: openai/gpt-5.6-sol
+    family: openai-gpt
+    scale: flagship
+    reasoning_effort: minimal   # lowest supported effort; verify in smoke test
+    supports_temperature: false
+    price_in: 5.00
+    price_out: 30.00
+  - id: claude-opus-5
+    model: anthropic/claude-opus-5
+    family: anthropic-claude
+    scale: flagship
+    reasoning_effort: minimal
+    supports_temperature: true
+    price_in: 5.00
+    price_out: 25.00
+  # - id: claude-fable-5        # stronger Mythos-tier alternative, 2x price
+  #   model: anthropic/claude-fable-5
+  #   family: anthropic-claude
+  #   scale: mythos
+  #   reasoning_effort: minimal
+  #   supports_temperature: false
+  #   price_in: 10.00
+  #   price_out: 50.00
+  - id: grok-4.5
+    model: x-ai/grok-4.5
+    family: xai-grok
+    scale: flagship
+    reasoning_effort: minimal
+    supports_temperature: true
+    price_in: 2.00
+    price_out: 6.00
+
+smoke_bank:                     # zero-cost pipeline validation only; never analysis
+  - id: gpt-oss-20b-free
+    model: openai/gpt-oss-20b:free
+    family: openai-oss
+    scale: 20B
+    reasoning_effort: low
+    supports_temperature: true
+    price_in: 0.0
+    price_out: 0.0
+
+datasets:
+  rewardbench:
+    manifest: experiments/h1_measurement/results/calibration_manifest.parquet
+    items_file: outputs/cfi/cfi_subset_items.txt
+  pku:
+    manifest: outputs/pku_saferlhf/pku_manifest.parquet
+    subsample: 300
+    seed: 20260601
+
+output:
+  root: outputs/openrouter_bank   # fully separate from outputs/gemini_bank

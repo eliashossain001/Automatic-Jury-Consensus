@@ -285,9 +285,9 @@ def train_and_eval_rm(ds, w, cfg, seed, device):
         return tok.apply_chat_template([{"role": "user", "content": prompt},
                                         {"role": "assistant", "content": resp}], tokenize=False)
 
-    def reward(texts):
+    def reward(texts, model_ref=model):
         enc = tok(texts, return_tensors="pt", padding=True, truncation=True, max_length=L).to(device)
-        return model(**enc).logits.squeeze(-1)
+        return model_ref(**enc).logits.squeeze(-1)
 
     pairs = ds["pairs"]
     keep = np.where(w > 0)[0]                              # drop zero-weight (oracle_drop / hard)

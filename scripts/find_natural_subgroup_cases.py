@@ -137,7 +137,8 @@ def main():
     lines = [r"\begin{tabular}{p{0.34\linewidth} c c c c}", r"\toprule",
              r"Prompt (truncated) & subset & consensus & vuln.\ cluster & CorrFilter retains? \\", r"\midrule"]
     for _, r in ex.iterrows():
-        lines.append(f"{str(r['prompt'])[:52].replace('&','\\&')}\\ldots & {r['subset']} & "
+        prompt = str(r["prompt"])[:52].replace("&", r"\&")
+        lines.append(f"{prompt}\\ldots & {r['subset']} & "
                      f"{r['consensus_level']:.2f} (wrong) & \\#{r['vulnerable_cluster']} & "
                      f"{'yes (fails)' if r['corrfilter_retains_item'] else 'no'} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]

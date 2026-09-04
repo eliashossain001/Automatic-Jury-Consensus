@@ -27,13 +27,18 @@ sys.path.insert(0, str(ROOT / "scripts" / "analysis"))
 from bootstrap_ci import paired_frr_gain  # noqa: E402
 from compute_dependence import (dependence_metrics, estimate_R,  # noqa: E402
                                 item_ids_from_manifest, load_votes)
-from corrfilter.cfi.consensus import ABSTAIN, consensus_level, majority_consensus  # noqa: E402
+from corrfilter.cfi.consensus import consensus_level  # noqa: E402
+from corrfilter.evaluation import evaluable_and_correct  # noqa: E402
 
 
 def supermaj_frr(V, M, gold):
-    maj = majority_consensus(V, M); level = consensus_level(V, M)
-    lab = maj != ABSTAIN; correct = lab & (maj == gold)
-    keep = lab & (level >= 0.75)
+    """False retention at the 0.75 supermajority operating point.
+
+    P0-0 corrected: ties abstain rather than resolving to a fixed value (this caller
+    passes a constant gold vector). See src/corrfilter/evaluation.py.
+    """
+    _, lab, correct = evaluable_and_correct(V, M, gold, tie_policy="abstain")
+    keep = lab & (consensus_level(V, M) >= 0.75)
     nk = int(keep.sum())
     return round(1 - float((keep & correct).sum()) / max(nk, 1), 4)
 

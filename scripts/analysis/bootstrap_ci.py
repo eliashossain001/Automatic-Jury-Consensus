@@ -17,57 +17,51 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from corrfilter.cfi.consensus import ABSTAIN, consensus_level, majority_consensus  # noqa: E402
 from corrfilter.cfi.corrfilter_score import corrfilter_score  # noqa: E402
+from corrfilter.evaluation import (consensus_score, evaluable_and_correct,  # noqa: E402
+                                   frr, matched_k, top_k_keep)
 
 DEFAULT_SEED = 20260706
 
 
-def _topk(score, k):
-    n = score.shape[0]
-    keep = np.zeros(n, dtype=bool)
-    if k > 0:
-        order = np.argsort(-np.nan_to_num(score, nan=-np.inf), kind="stable")
-        keep[order[:min(k, n)]] = True
-    return keep
+def paired_frr_gain(V, M, R, gold, retention=0.60, B=2000, seed=DEFAULT_SEED,
+                    tie_policy="abstain", retention_mode="evaluable"):
+    """Return dict: consensus_FRR - corrfilter_FRR at matched retention, with 95% CI.
 
-
-def _frr(keep, correct, labellable, idx):
-    kk = keep[idx] & labellable[idx]
-    nk = int(kk.sum())
-    return np.nan if nk == 0 else 1.0 - float((kk & correct[idx]).sum()) / nk
-
-
-def paired_frr_gain(V, M, R, gold, retention=0.60, B=2000, seed=DEFAULT_SEED):
-    """Return dict: consensus_FRR - corrfilter_FRR at matched retention, with 95% CI."""
+    Corrected by P0-0. Ties abstain rather than resolving to a fixed value, and retention
+    is denominated on the evaluable pool. Pass ``tie_policy="fixed"`` and
+    ``retention_mode="all_items"`` only to reproduce the archived pre-P0-0 numbers
+    (``outputs/_archive/pre_P0-0_2026-08-11/``); with a constant gold vector the former
+    now raises. See ``outputs/dpo_judges/D5_RESOLUTION.md``.
+    """
     n = V.shape[0]
-    maj = majority_consensus(V, M)
-    level = consensus_level(V, M)
-    labellable = maj != ABSTAIN
-    correct = labellable & (maj == gold)
-    sc_cons = np.where(labellable, level, -np.inf)
-    sc_cf = corrfilter_score(V, M, R, maj).score
-    k = int(round(retention * n))
-    kc, kf = _topk(sc_cons, k), _topk(sc_cf, k)
+    label, evaluable, correct = evaluable_and_correct(V, M, gold, tie_policy=tie_policy)
+    sc_cons = consensus_score(V, M, evaluable)
+    sc_cf = np.where(evaluable, corrfilter_score(V, M, R, label).score, -np.inf)
+    k = matched_k(retention, evaluable, retention_mode=retention_mode)
+    kc = top_k_keep(sc_cons, k, evaluable)
+    kf = top_k_keep(sc_cf, k, evaluable)
     rng = np.random.default_rng(seed)
     diffs = []
     for _ in range(B):
         idx = rng.integers(0, n, n)
-        d = _frr(kc, correct, labellable, idx) - _frr(kf, correct, labellable, idx)
+        d = frr(kc, correct, evaluable, idx) - frr(kf, correct, evaluable, idx)
         if not np.isnan(d):
             diffs.append(d)
     diffs = np.array(diffs)
-    point_cons = _frr(kc, correct, labellable, np.arange(n))
-    point_cf = _frr(kf, correct, labellable, np.arange(n))
     lo, hi = np.quantile(diffs, [0.025, 0.975])
     return {
         "retention": retention,
-        "consensus_frr": round(float(point_cons), 4),
-        "corrfilter_frr": round(float(point_cf), 4),
+        "n_evaluable": int(evaluable.sum()),
+        "n_keep": int(k),
+        "consensus_frr": round(float(frr(kc, correct, evaluable)), 4),
+        "corrfilter_frr": round(float(frr(kf, correct, evaluable)), 4),
         "gain_pts": round(float(diffs.mean()) * 100, 2),
         "ci_low_pts": round(float(lo) * 100, 2),
         "ci_high_pts": round(float(hi) * 100, 2),
         "p_corrfilter_better": round(float((diffs > 0).mean()), 3),
+        "tie_policy": tie_policy,
+        "retention_mode": retention_mode,
         "seed": seed,
     }
 

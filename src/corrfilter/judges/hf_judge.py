@@ -16,6 +16,7 @@ import torch
 
 from corrfilter.data import CalibrationItem
 from corrfilter.judges.base import Judge, JudgeSpec, JudgeVote
+from corrfilter.judges.position import position_swap
 from corrfilter.judges.prompts import PromptTemplate, get_prompt_template
 
 logger = logging.getLogger(__name__)
@@ -111,12 +112,16 @@ class HFJudge(Judge):
             torch.cuda.empty_cache()
 
     def _position_swap(self, item_id: str) -> bool:
+        """Deterministic slot assignment (see corrfilter.judges.position).
+
+        Previously used Python's built-in hash(), which is salted per process, so slot
+        assignment was not reproducible across runs and cross-bank comparisons silently
+        saw different layouts. BLAKE2b is stable across processes, machines, and
+        PYTHONHASHSEED values.
+        """
         if not self.shuffle_position:
             return False
-        # Hash the item id with the seed so the same logical judge picks a
-        # consistent (but pseudo-random) ordering per item across reruns.
-        h = hash((self.position_seed, self.spec.logical_id, item_id)) & 0xFFFFFFFF
-        return bool(h & 1)
+        return position_swap(item_id, self.spec.logical_id, self.position_seed)
 
     def _render_chat(self, raw_prompt_text: str) -> str:
         """If the tokenizer ships a chat template, use it; else return the raw text."""

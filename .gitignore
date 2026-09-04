@@ -1,4 +1,4 @@
-# ---- Python build / cache artifacts ----
+# Python build and cache artifacts
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -8,35 +8,34 @@ __pycache__/
 .venv/
 build/
 dist/
+.coverage
+htmlcov/
 
-# ---- Secrets / environment ----
+# Secrets and local environments
 .env
 .env.*
 .hf_cache/
 
-# ---- Heavy data & experiment artifacts (kept locally, not pushed) ----
-data/
-experiments/
-results/
-outputs/
-reports/
-figures/
+# Repository-root data and generated research artifacts
+/data/
+/experiments/*
+!/experiments/router_upgrade/
+!/experiments/router_upgrade/*.py
+/results/
+/outputs/
+/reports/
+/figures/
+/logs/
 
-# ---- Logs / scratch ----
-logs/
-*.log
-*.out
-
-# ---- Paper source & writeups (kept locally, not pushed) ----
-*.tex
+# Local paper source and generated documents
+/paper/
 *.tex.*-snapshot
 *.pdf
-iclr2025_conference.bib
 PAPER_CHANGES.md
 paper_claim_tightening.diff
 paper_claim_tightening_list.md
 reviewer_response_analysis.md
 
-# ---- OS cruft ----
+# OS and editor cruft
 .DS_Store
 Thumbs.db

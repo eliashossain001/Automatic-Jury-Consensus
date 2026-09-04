@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "corrfilter"
-version = "0.0.1"
-description = "Measuring and mitigating structured co-failure in LLM judge banks for alignment-data filtering."
+version = "0.1.0"
+description = "Measurement and deployment diagnostics for dependent errors in LLM judge consensus."
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.1",
@@ -21,10 +21,13 @@ dependencies = [
     "matplotlib>=3.8",
     "seaborn>=0.13",
     "tqdm>=4.66",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.5"]
+api = ["openai>=1.0", "google-generativeai>=0.8"]
+training = ["peft>=0.12", "trl>=0.11"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,5 +41,6 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP"]
-ignore = ["E501"]
+# Historical experiment scripts preserve their original, auditable form. Keep
+# repository-wide linting focused on syntax errors and undefined names.
+select = ["E9", "F63", "F7", "F82"]
