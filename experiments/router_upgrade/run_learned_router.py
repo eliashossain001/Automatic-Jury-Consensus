@@ -16,7 +16,7 @@ test. Extrapolation stress tests hold out entire rates (weak+subgroup) or
 mechanisms (global). Best-fixed baselines are always selected on training
 folds only. Downstream metrics come from the cached per-instance filter
 results (hard routing at instance level reproduces the chosen filter's keep
-set exactly, per the scripts/37 identity).
+set exactly, per the scripts/routing_selector/run_mixed_regime_benchmark.py identity).
 
 Usage: python experiments/router_upgrade/run_learned_router.py
 Outputs -> outputs/router_upgrade/

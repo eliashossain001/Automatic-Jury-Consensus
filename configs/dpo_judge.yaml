@@ -1,5 +1,5 @@
 # DPO judge bank (Bucket 2) — same 3 models as GRPO, DPO-trained into LoRA adapters,
-# crossed with 2 prompt styles = 6 logical DPO judges. Adapters from scripts/train_judges_dpo.py.
+# crossed with 2 prompt styles = 6 logical DPO judges. Adapters from scripts/preference_training/train_judge_dpo.py.
 bank:
   - {id: qwen-2.5-7b-dpo,   family: qwen,    scale: 7B,   hf_model: Qwen/Qwen2.5-7B-Instruct,        adapter_path: results/strengthening_phase/dpo_judges/adapters/qwen-2.5-7b_seed0,      quantization: nf4, dtype: bfloat16}
   - {id: mistral-7b-dpo,    family: mistral, scale: 7B,   hf_model: mistralai/Mistral-7B-Instruct-v0.3, adapter_path: results/strengthening_phase/dpo_judges/adapters/mistral-7b-v0.3_seed0, quantization: nf4, dtype: bfloat16}

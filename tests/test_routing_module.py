@@ -1,4 +1,4 @@
-"""Tests for corrfilter.routing: parity with scripts/18-19 and generator properties."""
+"""Tests for corrfilter.routing: parity with the regime/unified routers in scripts/routing_selector/ and generator properties."""
 
 from __future__ import annotations
 
@@ -118,11 +118,11 @@ def test_agree_features_and_scores_consistency():
 
 
 def test_parity_with_script18_agree_features():
-    """The canonical module must reproduce scripts/18's private implementation."""
+    """The canonical module must reproduce scripts/routing_selector/run_regime_router.py's private implementation."""
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        "s18", Path(__file__).resolve().parents[1] / "scripts" / "18_regime_router.py")
+        "s18", Path(__file__).resolve().parents[1] / "scripts" / "routing_selector/run_regime_router.py")
     s18 = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(s18)
 

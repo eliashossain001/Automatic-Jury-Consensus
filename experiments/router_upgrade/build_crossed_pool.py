@@ -29,7 +29,7 @@ mechanisms, ratio 1.0) are kept as extra rb-source global configs.
 
 Grid: 3 regimes x 2 sources x rates {5,10,15,20}% x 8 seeds = 192, + 12 CFI
 = 204 instances, all exactly 300 items (100-item small_gold calibration split,
-200-item held-out eval; matched retention; same filters as scripts/37).
+200-item held-out eval; matched retention; same filters as scripts/routing_selector/run_mixed_regime_benchmark.py).
 Fairness: the heuristic router gets a PER-SOURCE clean reference (rho/lco/rho_S
 and clean R for eigenvector overlap), as a deployed heuristic would.
 
@@ -149,7 +149,7 @@ def make_instance(src: Source, regime: str, rate: float, seed_counter: int):
 
 def evaluate(src: Source, O, Md, gold, counter, R_h1, affirmed_only=True,
              retention_mode="nonabstain", selector_features_from_calibration=False):
-    """scripts/37 protocol with PER-SOURCE references for heuristic fairness.
+    """scripts/routing_selector/run_mixed_regime_benchmark.py protocol with PER-SOURCE references for heuristic fairness.
 
     retention_mode: "nonabstain" (default; the original protocol, matching the
     supermajority-0.75 non-abstain count) or "affirmed" (match the

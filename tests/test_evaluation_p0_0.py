@@ -15,7 +15,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "scripts" / "analysis"))
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
 
 from corrfilter.cfi.consensus import ABSTAIN, majority_consensus
 from corrfilter.evaluation import (evaluable_and_correct, frr, matched_k,

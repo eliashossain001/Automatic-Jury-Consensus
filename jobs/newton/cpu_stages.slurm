@@ -14,13 +14,13 @@ source jobs/newton/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 
 echo "### Bucket 1: reproduce current paper results ###"
-bash scripts/reproduce_all.sh
+bash scripts/pipelines/reproduce_all.sh
 
 echo "### Bucket 5: qualitative failure examples ###"
-$PY scripts/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
+$PY scripts/robustness/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
 
 echo "### Bucket 6: summary figure (GRPO) ###"
-$PY scripts/figures/make_summary_figure.py --method-label GRPO \
+$PY scripts/figures/make_training_summary_figure.py --method-label GRPO \
   --trained-label grpo_trained_6 --filters-trained-label grpo || true
 
 touch "$RESULTS/.done/cpu_stages"

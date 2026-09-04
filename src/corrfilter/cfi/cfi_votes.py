@@ -1,6 +1,6 @@
 """Assemble CFI bank variants from cached real votes (Bucket 3 analysis side).
 
-The real-inference runner (scripts/07) caches biased votes per
+The real-inference runner (scripts/regimes/run_cofailure_votes_gpu.py) caches biased votes per
 ``(mechanism, logical_judge)`` and the clean control reuses the H1 cache. This
 module assembles, for any ``(mechanism, biased_ratio)`` pair, the vote matrix a
 bank with that fraction of biased judges would produce — selecting biased vs

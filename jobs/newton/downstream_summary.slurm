@@ -12,7 +12,7 @@ set -euo pipefail
 source jobs/newton/env.sh
 [ -f "$REPO/.venv/bin/activate" ] && source "$REPO/.venv/bin/activate" && export PY="$REPO/.venv/bin/python"
 RD="$RESULTS/downstream/results"; mkdir -p "$RD"
-$PY scripts/summarize_downstream.py \
+$PY scripts/downstream/summarize_downstream.py \
   --majority-eval "$RD/eval_majority.csv" --corrfilter-eval "$RD/eval_corrfilter.csv" \
   --dataset-stats "$RESULTS/downstream/data/dataset_stats.csv" \
   --out outputs/downstream/table_policy_comparison.csv

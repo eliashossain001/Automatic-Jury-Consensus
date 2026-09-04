@@ -1,8 +1,8 @@
 """Shared regime-routing primitives (canonical versions of the helpers that
-scripts 16-19 each carry as private copies; behaviour matches scripts/18 and
-scripts/19 exactly -- verified by tests/test_routing_module.py).
+the filter and router scripts in scripts/filters/ and scripts/routing_selector/ each carry as private copies; behaviour matches scripts/routing_selector/run_regime_router.py and
+scripts/routing_selector/run_unified_router.py exactly -- verified by tests/test_routing_module.py).
 
-Used by scripts/37_mixed_regime_benchmark.py; the older scripts keep their own
+Used by scripts/routing_selector/run_mixed_regime_benchmark.py; the older scripts keep their own
 copies untouched for backward compatibility.
 """
 
@@ -22,13 +22,13 @@ ALL_SIGNALS = {"rho_bar", "eig", "rho_S", "lco"}
 REGIME_FILTER = {"weak": "supermajority_75", "global": "corrfilter_small_gold_R", "subgroup": "bias_cluster"}
 REGIMES = ["weak", "global", "subgroup"]
 
-# H1-measured per-judge position-bias gaps (accuracy points), scripts/15-19.
+# H1-measured per-judge position-bias gaps (accuracy points), scripts/regimes/ and scripts/routing_selector/.
 H1GAP = {"gemma-2-9b::pairwise": 10.4, "gemma-2-9b::likert": 40.8, "llama-3.1-8b::pairwise": 63.7,
          "llama-3.1-8b::likert": 17.4, "mistral-7b-v0.3::pairwise": 70.2, "mistral-7b-v0.3::likert": 15.9,
          "phi-3.5-mini::pairwise": 30.1, "phi-3.5-mini::likert": 11.9, "qwen-2.5-7b::pairwise": 46.7,
          "qwen-2.5-7b::likert": 51.7}
 
-# Clean-referenced hard-router margins (scripts/18).
+# Clean-referenced hard-router margins (scripts/routing_selector/run_regime_router.py).
 HARD_THR = {"rho": 0.03, "lco": 0.05, "eig": 0.85}
 
 
@@ -80,7 +80,7 @@ def position_sensitivity_cluster(V, M, S, k=CLUSTER_K):
 
 
 def agree_features(O, M, label, cpos_mask, R_clean):
-    """Per-item agreeing-set features (matches scripts/18 `_agree_features`)."""
+    """Per-item agreeing-set features (matches scripts/routing_selector/run_regime_router.py `_agree_features`)."""
     n, m = O.shape
     Mb = M.astype(bool)
     Rs = (R_clean + R_clean.T) / 2.0
@@ -108,7 +108,7 @@ def agree_features(O, M, label, cpos_mask, R_clean):
 
 
 def filter_scores(O, M, label, R_h1, R_sg, cpos_mask, feats=None):
-    """Per-item keep-scores for the four base filters (scripts/18 `_filter_scores`)."""
+    """Per-item keep-scores for the four base filters (scripts/routing_selector/run_regime_router.py `_filter_scores`)."""
     if feats is None:
         feats = agree_features(O, M, label, cpos_mask, R_h1)
     return {
@@ -120,7 +120,7 @@ def filter_scores(O, M, label, R_h1, R_sg, cpos_mask, feats=None):
 
 
 def pct_rank(x):
-    """Percentile-rank to [0,1] (NaN/-inf -> 0); matches scripts/18 `_pct`."""
+    """Percentile-rank to [0,1] (NaN/-inf -> 0); matches scripts/routing_selector/run_regime_router.py `_pct`."""
     x = np.asarray(x, float)
     valid = np.isfinite(x)
     r = np.zeros(len(x))
@@ -132,7 +132,7 @@ def pct_rank(x):
 
 
 def classify_regime_hard(d, ref, thr=HARD_THR):
-    """Dataset-level hard rule (scripts/18 `classify_regime`)."""
+    """Dataset-level hard rule (scripts/routing_selector/run_regime_router.py `classify_regime`)."""
     if d["rho_bar"] - ref["rho_bar"] > thr["rho"]:
         return "global"
     if (d["lco_flip"] - ref["lco_flip"] > thr["lco"]) or (d["eig_overlap"] < thr["eig"]):
@@ -142,7 +142,7 @@ def classify_regime_hard(d, ref, thr=HARD_THR):
 
 def regime_probs(rho_bar_dev, eig_drift, rho_S_dev, lco, temp=TEMP, use=ALL_SIGNALS,
                  weak_prior=WEAK_PRIOR):
-    """Per-item (p_weak, p_global, p_subgroup) softmax (scripts/19 `regime_probs`)."""
+    """Per-item (p_weak, p_global, p_subgroup) softmax (scripts/routing_selector/run_unified_router.py `regime_probs`)."""
     n = len(lco)
     g = np.zeros(n)
     s = np.zeros(n)
@@ -163,7 +163,7 @@ def regime_probs(rho_bar_dev, eig_drift, rho_S_dev, lco, temp=TEMP, use=ALL_SIGN
 
 
 def keep_at_matched_retention(score, pool, n_match):
-    """Keep top-`n_match` scored items inside `pool` (scripts/18 `keep_by`)."""
+    """Keep top-`n_match` scored items inside `pool` (scripts/routing_selector/run_regime_router.py `keep_by`)."""
     s = np.where(pool, score, -np.inf)
     k, _ = retention_match_threshold(s, n_match)
     return k & pool
@@ -171,7 +171,7 @@ def keep_at_matched_retention(score, pool, n_match):
 
 def position_poison_mask(V, M, logical_ids, rate, subset_idx=None):
     """Position-aligned poison mask: top-`rate` items by H1-weighted wrong-vote
-    mass (scripts/15/18 generator), optionally restricted to `subset_idx`."""
+    mass (scripts/regimes/run_position_aligned_poisoning.py and scripts/routing_selector/run_regime_router.py generator), optionally restricted to `subset_idx`."""
     w = np.array([H1GAP.get(l, 0.0) for l in logical_ids]) / 100.0
     pos_score = ((1 - V) * M * w[None, :]).sum(1)
     if subset_idx is None:

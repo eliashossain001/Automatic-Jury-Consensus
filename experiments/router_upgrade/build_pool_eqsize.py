@@ -2,12 +2,12 @@
 """Router-upgrade research: build an enlarged mixed-regime instance pool with
 extended routing features and cached per-instance downstream filter metrics.
 
-Research code only; the paper and the scripts/37 benchmark are untouched. The
+Research code only; the paper and the scripts/routing_selector/run_mixed_regime_benchmark.py benchmark are untouched. The
 pool reuses the three paper generators (analysis-only vote replay):
   weak      content-poisoned UF, rates {5, 7.5, 10, 15, 20}% x 12 seeds  (60)
   subgroup  position-aligned UF, same grid                               (60)
   global    CFI biased banks, 3 mechanisms x ratios {0.5, 0.75, 1.0} x 7 seeds (63)
-Each instance is evaluated with the scripts/37 protocol (same filters, matched
+Each instance is evaluated with the scripts/routing_selector/run_mixed_regime_benchmark.py protocol (same filters, matched
 retention, held-out eval after a 100-item small_gold calibration split), and a
 set of label-free deployment features is extracted from the SAME eval split the
 filters see. `config_id` identifies the generator parameterisation and is the
@@ -44,11 +44,11 @@ from corrfilter.routing import (  # noqa: E402
     position_sensitivity_cluster)
 from corrfilter.voting import VoteCache  # noqa: E402
 
-spec37 = importlib.util.spec_from_file_location("mrb", ROOT / "scripts" / "37_mixed_regime_benchmark.py")
+spec37 = importlib.util.spec_from_file_location("mrb", ROOT / "scripts" / "routing_selector/run_mixed_regime_benchmark.py")
 mrb = importlib.util.module_from_spec(spec37)
 spec37.loader.exec_module(mrb)
 
-BASE = 20260901           # distinct from scripts/37's instance seeds
+BASE = 20260901           # distinct from scripts/routing_selector/run_mixed_regime_benchmark.py's instance seeds
 RATES = [0.05, 0.075, 0.10, 0.15, 0.20]
 N_SEEDS_UF = 8
 CFI_MECHS = ["position_bias_stress_test", "polite_hallucination_preference", "verbosity_bias"]

@@ -3,8 +3,8 @@
 Single source of truth for turning (V, M, gold) into an evaluable pool, a correctness
 mask, and a retention-matched keep set. Introduced by the P0-0 remediation to replace
 three near-duplicate implementations that each carried the same two defects
-(``scripts/analysis/bootstrap_ci.py``, ``scripts/analysis/run_filters.py``,
-``scripts/29_grpo_corrfilter_eval.py``).
+(``scripts/lib/bootstrap_ci.py``, ``scripts/lib/run_filters.py``,
+``scripts/preference_training/evaluate_grpo_corrfilter.py``).
 
 The two defects, documented in ``outputs/dpo_judges/D5_RESOLUTION.md``:
 

@@ -25,9 +25,9 @@ echo "########## Buckets 1/5/6: reproduce + qualitative + summary figure (CPU) #
 # memory cgroup, so they are submitted as a COMPUTE-node job unless --local is given.
 J_CPU=""
 if [ "$LOCAL" = 1 ] || ! command -v sbatch >/dev/null; then
-  bash scripts/reproduce_all.sh
-  $PY scripts/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
-  $PY scripts/figures/make_summary_figure.py --method-label GRPO \
+  bash scripts/pipelines/reproduce_all.sh
+  $PY scripts/robustness/extract_failure_examples.py --bank configs/judge_bank.yaml --out-dir outputs/qualitative || true
+  $PY scripts/figures/make_training_summary_figure.py --method-label GRPO \
     --trained-label grpo_trained_6 --filters-trained-label grpo || true
 else
   J_CPU=$(SB jobs/newton/cpu_stages.slurm)
@@ -56,7 +56,7 @@ fi
 fi
 
 echo "########## manifest.json ##########"
-$PY scripts/write_manifest.py --out "$RESULTS/manifest.json" --stage run_all \
+$PY scripts/calibration/write_run_manifest.py --out "$RESULTS/manifest.json" --stage run_all \
   --config configs/judge_bank.yaml --config configs/grpo_judge_bank.yaml \
   --config configs/dpo_judge.yaml --config configs/judge_bank_extended.yaml \
   --dataset "$CAL_MANIFEST" --dataset "$UF_MANIFEST" \
