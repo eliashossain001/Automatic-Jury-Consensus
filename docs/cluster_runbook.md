@@ -1,6 +1,6 @@
-# Strengthening-phase runbook (Newton)
+# Strengthening-phase runbook (SLURM cluster)
 
-One entrypoint runs every bucket: **`bash jobs/newton/run_all.sh`**. CPU stages run
+One entrypoint runs every bucket: **`bash jobs/slurm/run_all.sh`**. CPU stages run
 inline; GPU stages are submitted as a SLURM DAG with dependencies and are resumable.
 
 ## Buckets
@@ -16,7 +16,7 @@ inline; GPU stages are submitted as a SLURM DAG with dependencies and are resuma
 ## First-time setup (login node, has internet)
 ```bash
 cd <repo>
-bash jobs/newton/setup_env.sh          # venv + deps + verify; then stage models (see below)
+bash jobs/slurm/setup_env.sh          # venv + deps + verify; then stage models (see below)
 ```
 **Stage models** (compute nodes are usually offline). Either rsync the shared cache or
 download on the login node with your HF token — both snippets are printed by `setup_env.sh`.
@@ -29,23 +29,23 @@ rsync -aP <you>@<sharedhost>:<repo>/results/grpo_judges/ results/grpo_judges/
 
 ## Smoke test (one GPU job, ~15 min) — do this before run_all
 ```bash
-sbatch jobs/newton/smoke_test.slurm     # CPU reproduce assert + tiny DPO train
+sbatch jobs/slurm/smoke_test.slurm     # CPU reproduce assert + tiny DPO train
 ```
 
 ## Run everything
 ```bash
-bash jobs/newton/run_all.sh             # CPU inline + submit GPU DAG
+bash jobs/slurm/run_all.sh             # CPU inline + submit GPU DAG
 squeue -u $USER                         # watch; logs in logs/%x-%j.out
 ```
 Options: `--cpu-only` (buckets 1/5/6 only), `--no-submit` (build but don't sbatch).
 
 ## Configuration (all overridable via env; no hardcoded paths)
-`jobs/newton/env.sh` centralizes everything:
-`SLURM_PARTITION` (normal) · `SLURM_ACCOUNT` (nyousefi) · `SLURM_QOS` (normal) ·
+`jobs/slurm/env.sh` centralizes everything:
+`SLURM_PARTITION` (normal) · `SLURM_ACCOUNT` (set this) · `SLURM_QOS` (normal) ·
 `SLURM_GRES` (gpu:nvidia_h100_pcie:1) · `SLURM_TIME` · `PRECISION` (bf16 on H100/A100,
 fp16 on V100) · `HF_HOME` · `POLICY_BASE` (Qwen2.5-1.5B; bump to 3B for a stronger
 downstream) · `RETENTION` (0.60) · `SEED`.
-Example: `SLURM_GRES=gpu:nvidia_h100_80gb_hbm3:1 PRECISION=bf16 bash jobs/newton/run_all.sh`
+Example: `SLURM_GRES=gpu:nvidia_h100_80gb_hbm3:1 PRECISION=bf16 bash jobs/slurm/run_all.sh`
 
 ## Resume / provenance
 - Each GPU stage writes `results/strengthening_phase/.done/<stage>` and skips if its

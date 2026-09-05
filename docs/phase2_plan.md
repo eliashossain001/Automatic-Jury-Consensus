@@ -1,5 +1,8 @@
 # ICLR 2027 Phase 2 Implementation Plan
 
+> **Note on paths.** Script paths in this file refer to a superseded `scripts/`
+> layout. See [`script_map.md`](script_map.md) for the current locations.
+
 Paper: *Agreement Is Not Evidence: Measuring Error Dependence and Effective Evidence in LLM Judge
 Consensus* (`main.tex`).
 Prepared: 2026-08-11. **Planning only. Nothing in this document has been run. No experiment starts

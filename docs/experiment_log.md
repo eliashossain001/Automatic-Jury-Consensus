@@ -1,5 +1,8 @@
 # Experiment log
 
+> **Note on paths.** Script paths in this file refer to a superseded `scripts/`
+> layout. See [`script_map.md`](script_map.md) for the current locations.
+
 Running record of every experiment bucket, newest sections appended at the end.
 Paths in older entries follow the pre-reorganisation layout; see
 [`script_map.md`](script_map.md).
@@ -33,7 +36,7 @@ failure modes. Analysis-only, deterministic, no GPU, no inference.
 **Command**
 ```
 python scripts/dependence/eigen_failure_decomposition.py \
-    --project-root /home/elias/elias_projects/corrfilter
+    --project-root /path/to/corrfilter
 ```
 
 **Inputs reused** — `experiments/h1_measurement/results/correlation.npz`
@@ -120,7 +123,7 @@ python -m pytest tests/         # 99 passed (was 98 passed / 1 failed pre-fix)
 ### Validation already run (no waiting on the GPU job)
 - **CorrFilter on real clean H1 bank** (1195 items):
   ```
-  python scripts/cfi/run_corrfilter.py --project-root /home/elias/elias_projects/corrfilter
+  python scripts/cfi/run_corrfilter.py --project-root /path/to/corrfilter
   ```
   Sane sanity check — on the clean bank CorrFilter ≈ majority (FRR 0.277 vs
   0.271) and keeps slightly lower within-subset ρ_S (0.208 vs 0.216); the
@@ -230,7 +233,7 @@ gold-derived biased errors.
 **Commands**
 ```
 python scripts/cfi/adaptive_r.py \
-    --project-root /home/elias/elias_projects/corrfilter \
+    --project-root /path/to/corrfilter \
     --items-file outputs/cfi/cfi_subset_items.txt
 python -m pytest tests/          # 105 passed
 # single-mechanism, gold-free CorrFilter via script 09:
@@ -305,7 +308,7 @@ corrected to the frame-flip construct that matches the task wording.)
 **Command**
 ```
 python scripts/cfi/adaptive_r_direction_randomized.py \
-    --project-root /home/elias/elias_projects/corrfilter \
+    --project-root /path/to/corrfilter \
     --items-file outputs/cfi/cfi_subset_items.txt
 ```
 **Outputs** (`outputs/direction_randomized/`): `direction_randomized_results.csv`
@@ -737,7 +740,7 @@ strengthened: consensus is not reliability under dependence.**
 2. Analyze on the same subset:
    ```
    python scripts/cfi/analyze_gpu_bank.py \
-       --project-root /home/elias/elias_projects/corrfilter \
+       --project-root /path/to/corrfilter \
        --items-file outputs/cfi/cfi_subset_items.txt
    ```
    → `outputs/cfi/{cfi_agreement_accuracy,cfi_false_retention,cfi_biased_ratio,
@@ -755,7 +758,7 @@ strengthened: consensus is not reliability under dependence.**
 5. Optional: add `corrfilter_subset_risk_tau` calibration (sweep `--alpha-floor`)
    once the biased-bank α distributions are known.
 
-## Bucket 13 — Prof. Lim / external-review package (frontier pilot, non-errors, routing accuracy, mixed regimes)  ✅ COMPLETE (2026-07-25)
+## Bucket 13 — external-review package (frontier pilot, non-errors, routing accuracy, mixed regimes)  ✅ COMPLETE (2026-07-25)
 
 Four additions, all additive; 127 tests pass (21 new). Full details and paper edits below.
 
@@ -1096,7 +1099,7 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
   per-instance oracle (+0.84 remains regime-oracle). No new figures; Overleaf recompile +
   8-page check remain user-side.
 
-## Bucket 24 (2026-08-04): Prof. Lim response — router-vs-regime-oracle + frontier-bank transfer
+## Bucket 24 (2026-08-04): Review response — router-vs-regime-oracle + frontier-bank transfer
 - Budget: $0.00 of $10.38 OpenRouter ceiling spent (cached votes only). Baseline reproduced
   first (142 tests; artifact checksums saved and re-verified after new work — unchanged).
 - PRIMARY (Lim Q1): automatic logreg router minus regime-oracle router, paired CIs: in-domain
@@ -1155,7 +1158,7 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
 
 ## Bucket 27 (2026-08-05, in progress): Pointwise factuality generalization (Stages 1-3)
 - Stage 1 DONE: src/corrfilter/data/generic_task.py (JudgeTaskBatch + validate, FactualityItem,
-  AggreFact loader [BLOCKED: gated on HF, Elias must accept terms at
+  AggreFact loader [BLOCKED: gated on HF, the author must accept terms at
   huggingface.co/datasets/lytang/LLM-AggreFact], VitaminC loader = active primary: 47,411
   binary items after NEI exclusion [7,268] + dedup [518], median doc 136 chars),
   judges/prompts_pointwise.py (pw_direct + pw_analysis, NOT-SUPPORTED-safe parser, malformed ->
@@ -1187,7 +1190,7 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
   marker). Frontier API spend correctly NOT triggered ($0 total; OpenRouter $10 + Gemini key
   untouched). Report: outputs/router_upgrade/FACTUALITY_GENERALIZATION_RESULTS.md (Outcome C
   for regime-valid routing; recommends keeping the paper's future-work sentence; the two
-  positive findings are appendix-note candidates pending Elias's approval).
+  positive findings are appendix-note candidates pending author approval).
 - Screen session closed. AggreFact still gated (user action pending, optional).
 
 ## Bucket 28 (2026-08-05, in progress): Routing-feasibility screening campaign
@@ -1265,7 +1268,7 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
   + 1 natural mechanism reinforce the manuscript's actionability-boundary claim.
 
 ## Bucket 31 (2026-08-06, in progress): AggreFact component screening (access GRANTED)
-- Elias granted Hub access: LLM-AggreFact dev = 30,420 items, 0 non-binary, 51 dupes dropped.
+- The author granted Hub access: LLM-AggreFact dev = 30,420 items, 0 non-binary, 51 dupes dropped.
   Component audit: 8 eligible at <=2,000-char control (RAGTruth, ExpertQA, Lfqa, Reveal,
   FactCheck-GPT, AggreFact-XSum, AggreFact-CNN@139, ClaimVerify@147); TofuEval x2 + Wice
   excluded (context length, documented). Screening manifest: 1,186 items, label-stratified
@@ -1291,7 +1294,7 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
 - rho_err 0.32-0.52, n_eff 1.8-2.6 across ALL components incl. model-generated-claim sources:
   the high-dependence boundary now replicates across 12 pointwise-factuality sources/strata +
   5 bank compositions. No component selected; NO routing run; paper untouched.
-- Per directive: factuality work STOPS. Decision point for Elias: approve/decline the
+- Per directive: factuality work STOPS. Decision point for the author: approve/decline the
   frontier-code pilot (FRONTIER_CODE_PROPOSAL.md: Stage P $<=2.5 gate, Stage F $15-25 needs
   top-up or 400-item design). Full table: screening/screen_summary_aggrefact.csv.
 
@@ -1306,12 +1309,12 @@ pre-registered logreg + both confound experiments disclosed. Paper NOT modified.
   paper's tier finding (Discovery 2). The code task now anchors BOTH boundary modes by tier:
   local 7-9B = competence failure; frontier = dependence/headroom failure.
 - Cost: OpenRouter EXACT $2.22 (balance 10.379 -> 8.162; reasoning tokens dominated: grok 36.2k
-  out on 60 items); Gemini est. $0.20-0.35 (73k in-tokens/model, billed on Elias's key). NOTE:
+  out on 60 items); Gemini est. $0.20-0.35 (73k in-tokens/model, billed on the author's key). NOTE:
   per-judge cost meter read $0 (PRICES table lacks these model ids) — ceiling held by luck;
   fix before any future paid run. Paper untouched.
 
 ## Bucket 33 (2026-08-07): Wrap-up — cost-meter fix, artifact preservation, appendix summary
-- ALL new experiments STOPPED per Elias. No screens running; no GPU/API jobs.
+- ALL new experiments STOPPED per the author. No screens running; no GPU/API jobs.
 - Cost-meter bug FIXED: PRICES now carries the six pinned frontier models (OpenRouter rates
   from the live /api/v1/models endpoint, validated: token reconstruction $2.224 vs billed
   $2.217; Gemini rates from the project's own billed run_log_*.json); live judges with unknown
