@@ -1,6 +1,4 @@
-# CorrFilter
-
-Code for **Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus**.
+**Agreement Overstates Evidence: Error Dependence in LLM Judge Consensus**.
 
 This repository measures dependent errors in LLM judge banks and studies their
 consequences for consensus filtering and evaluation. The central contribution is a
